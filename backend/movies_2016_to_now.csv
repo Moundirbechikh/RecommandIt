@@ -1,0 +1,396 @@
+movieId,title,genres,year
+122890,Warcraft,Action|Adventure|Fantasy,2016.0
+122898,Justice League,Action|Adventure|Sci-Fi,2017.0
+122904,Deadpool,Action|Adventure|Comedy|Sci-Fi,2016.0
+122906,Black Panther,Action|Adventure|Sci-Fi,2017.0
+122912,Avengers: Infinity War - Part I,Action|Adventure|Sci-Fi,2018.0
+122916,Thor: Ragnarok,Action|Adventure|Sci-Fi,2017.0
+122918,Guardians of the Galaxy 2,Action|Adventure|Sci-Fi,2017.0
+122920,Captain America: Civil War,Action|Sci-Fi|Thriller,2016.0
+122922,Doctor Strange,Action|Adventure|Sci-Fi,2016.0
+122924,X-Men: Apocalypse,Action|Adventure|Fantasy|Sci-Fi,2016.0
+122926,Untitled Spider-Man Reboot,Action|Adventure|Fantasy,2017.0
+135143,Fantastic Beasts and Where to Find Them,Fantasy,2016.0
+135436,The Secret Life of Pets,Animation|Comedy,2016.0
+135536,Suicide Squad,Action|Crime|Sci-Fi,2016.0
+135567,Independence Day: Resurgence,Action|Adventure|Sci-Fi,2016.0
+135569,Star Trek Beyond,Action|Adventure|Sci-Fi,2016.0
+136864,Batman v Superman: Dawn of Justice,Action|Adventure|Fantasy|Sci-Fi,2016.0
+137857,The Jungle Book,Adventure|Drama|Fantasy,2016.0
+138210,13 Hours,Drama,2016.0
+139857,Colonia,Thriller,2016.0
+142222,Demolition,Drama,2016.0
+143355,Wonder Woman,Action|Adventure|Fantasy,2017.0
+143365,The Circle,Drama|Sci-Fi|Thriller,2016.0
+143367,Silence,Drama|Thriller,2016.0
+143859,"Hail, Caesar!",Comedy,2016.0
+148172,The 5th Wave,Adventure|Sci-Fi|Thriller,2016.0
+148888,Zoolander 2,Comedy,2016.0
+148956,How to Be Single,Comedy|Romance,2016.0
+149406,Kung Fu Panda 3,Action|Adventure|Animation,2016.0
+149590,Standoff,Thriller,2016.0
+149830,Pride and Prejudice and Zombies,Comedy|Horror|Romance|Thriller,2016.0
+150548,Sherlock: The Abominable Bride,Action|Crime|Drama|Mystery|Thriller,2016.0
+151311,Wiener-Dog,Comedy,2016.0
+151315,Ride Along 2,Action|Comedy,2016.0
+151455,Eddie the Eagle,Comedy,2016.0
+151501,Exposed,Drama,2016.0
+151687,Risen,Children|Drama,2016.0
+151739,Dirty Grandpa,Comedy,2016.0
+151777,The Finest Hours,Drama|Thriller,2016.0
+152063,Gods of Egypt,Adventure|Fantasy,2016.0
+152065,Embrace of the Serpent,Adventure|Drama,2016.0
+152071,Race,Drama,2016.0
+152077,10 Cloverfield Lane,Thriller,2016.0
+152079,London Has Fallen,Action|Crime|Thriller,2016.0
+152081,Zootopia,Action|Adventure|Animation|Children|Comedy,2016.0
+152083,Whiskey Tango Foxtrot,Comedy|War,2016.0
+152085,Desierto,Drama,2016.0
+152091,The Brothers Grimsby,Comedy,2016.0
+152284,War and Peace,Drama|Romance,2016.0
+152372,Southbound,Horror,2016.0
+152970,Hunt for the Wilderpeople,Adventure|Comedy,2016.0
+154065,Dad's Army,Comedy,2016.0
+154975,Merci Patron !,Comedy|Documentary,2016.0
+155064,The Neon Demon,Drama|Horror|Mystery,2016.0
+155288,Eye in the Sky,Drama|Thriller|War,2016.0
+155358,Camino,Action|Adventure|Thriller,2016.0
+155509,Mr. Right,Action|Comedy|Romance,2016.0
+155659,Florence Foster Jenkins,Comedy|Drama,2016.0
+155743,My Big Fat Greek Wedding 2,Comedy,2016.0
+155812,Get a Job,Comedy,2016.0
+155820,Keanu,Comedy,2016.0
+156025,Ice Age: The Great Egg-Scapade,Adventure|Animation|Children|Comedy,2016.0
+156371,Everybody Wants Some,Comedy,2016.0
+156387,Sing Street,Drama,2016.0
+156607,The Huntsman Winter's War,Action|Adventure|Drama|Fantasy,2016.0
+156609,Neighbors 2: Sorority Rising,Comedy,2016.0
+156706,The Trust,Crime|Thriller,2016.0
+156726,Hush,Thriller,2016.0
+157122,The Man Who Knew Infinity,Drama,2016.0
+157130,Despite the Falling Snow,Drama|Romance|Thriller,2016.0
+157200,Money Monster,Drama|Thriller,2016.0
+157270,Barbershop: The Next Cut,Comedy,2016.0
+157296,Finding Dory,Adventure|Animation|Comedy,2016.0
+157312,The Boss,Comedy,2016.0
+157340,The Angry Birds Movie,Animation|Comedy,2016.0
+157407,I Am Wrath,Action|Crime|Drama|Thriller,2016.0
+157432,Precious Cargo,Action|Crime,2016.0
+157699,Snowden,Drama|Thriller,2016.0
+157865,Ratchet & Clank,Action|Adventure|Animation|Children|Comedy|Sci-Fi,2016.0
+158022,Kicking Off,Comedy,2016.0
+158027,SORI: Voice from the Heart,Drama|Sci-Fi,2016.0
+158238,The Nice Guys,Crime|Mystery|Thriller,2016.0
+158254,Kindergarten Cop 2,Action|Comedy,2016.0
+158402,The Crew,Action,2016.0
+158528,The Shallows,Drama|Thriller,2016.0
+158783,The Handmaiden,Drama|Romance|Thriller,2016.0
+158813,Alice Through the Looking Glass,Adventure|Children|Fantasy,2016.0
+158830,The BFG,Children|Fantasy,2016.0
+158842,My Scientology Movie,Documentary,2016.0
+158872,Sausage Party,Animation|Comedy,2016.0
+158882,All Yours,Comedy|Drama|Romance,2016.0
+158956,Kill Command,Action|Horror|Sci-Fi,2016.0
+158966,Captain Fantastic,Drama,2016.0
+158972,Toni Erdmann,Drama,2016.0
+159061,The Wailing,Mystery|Thriller,2016.0
+159077,The Meddler,Comedy|Drama,2016.0
+159093,Now You See Me 2,Action|Comedy|Thriller,2016.0
+159193,Café Society,Comedy|Drama|Romance,2016.0
+159415,Swiss Army Man,Comedy|Drama|Romance,2016.0
+159441,The Do-Over,Comedy,2016.0
+159690,Teenage Mutant Ninja Turtles: Out of the Shadows,Action|Adventure|Comedy,2016.0
+159717,The Fundamentals of Caring,Drama,2016.0
+159755,Popstar: Never Stop Never Stopping,Comedy,2016.0
+159849,Bo Burnham: Make Happy,Comedy,2016.0
+159858,The Conjuring 2,Horror,2016.0
+159976,Pelé: Birth of a Legend,Drama,2016.0
+160080,Ghostbusters,Action|Comedy|Horror|Sci-Fi,2016.0
+160271,Central Intelligence,Action|Comedy,2016.0
+160289,O.J.: Made in America,Documentary,2016.0
+160400,Genius,Drama,2016.0
+160438,Jason Bourne,Action,2016.0
+160563,The Legend of Tarzan,Action|Adventure,2016.0
+160565,The Purge: Election Year,Action|Horror|Sci-Fi,2016.0
+160567,Mike & Dave Need Wedding Dates,Comedy,2016.0
+160569,Ice Age: Collision Course,Adventure|Animation|Children|Comedy,2016.0
+160571,Lights Out,Horror,2016.0
+160573,Pete's Dragon,Adventure|Children|Fantasy,2016.0
+160644,Indignation,Drama,2016.0
+160646,Goat,Drama,2016.0
+160684,Marauders,Action,2016.0
+160718,Piper,Animation,2016.0
+160848,The Red Turtle,Animation,2016.0
+160872,Satanic,Horror,2016.0
+160954,Nerve,Drama|Thriller,2016.0
+160980,Sully,Drama,2016.0
+161024,Jim Jefferies: Freedumb,Comedy,2016.0
+161127,The Infiltrator,Crime|Drama,2016.0
+161131,War Dogs,Comedy,2016.0
+161290,Vigilante Diaries,Action,2016.0
+161354,Batman: The Killing Joke,Action|Animation|Crime|Drama,2016.0
+161580,Bad Moms,Comedy,2016.0
+161582,Hell or High Water,Crime|Drama,2016.0
+161594,Kingsglaive: Final Fantasy XV,Action|Adventure|Animation|Drama|Fantasy|Sci-Fi,2016.0
+161634,Don't Breathe,Thriller,2016.0
+161918,Sharknado 4: The 4th Awakens,Action|Adventure|Horror|Sci-Fi,2016.0
+161922,The Edge of Seventeen,Comedy,2016.0
+161966,Elle,Thriller,2016.0
+162082,Train to Busan,Action|Thriller,2016.0
+162344,Tom Segura: Mostly Stories,Comedy,2016.0
+162350,The Magnificent Seven,Action|Western,2016.0
+162478,Masterminds,Action|Comedy|Crime,2016.0
+162578,Kubo and the Two Strings,Adventure|Animation|Children|Fantasy,2016.0
+162590,Bridget Jones's Baby,Comedy|Romance,2016.0
+162598,Deepwater Horizon,Drama,2016.0
+162600,Miss Peregrine's Home for Peculiar Children,Fantasy,2016.0
+162602,The Girl on the Train,Thriller,2016.0
+162606,The Accountant,Crime|Drama|Thriller,2016.0
+162828,Imperium,Crime|Drama|Thriller,2016.0
+162968,Kizumonogatari Part 1: Tekketsu,Action|Animation|Mystery,2016.0
+163056,Shin Godzilla,Action|Adventure|Fantasy|Sci-Fi,2016.0
+163134,Your Name.,Animation|Drama|Fantasy|Romance,2016.0
+163639,DC Super Hero Girls: Hero of the Year,Animation,2016.0
+163645,Hacksaw Ridge,Drama|War,2016.0
+163653,David Cross: Making America Great Again,Comedy,2016.0
+163937,Blair Witch,Horror|Thriller,2016.0
+163981,31,Horror,2016.0
+163985,ARQ,Sci-Fi|Thriller,2016.0
+164179,Arrival,Sci-Fi,2016.0
+164200,Storks,Animation|Children|Comedy,2016.0
+164226,Maximum Ride,Action|Adventure|Comedy|Fantasy|Sci-Fi|Thriller,2016.0
+164280,Endless Poetry,Drama|Fantasy,2016.0
+164367,The Girl with All the Gifts,Drama|Horror|Sci-Fi|Thriller,2016.0
+164375,All Roads Lead to Rome,Comedy,2016.0
+164540,Amanda Knox,Documentary,2016.0
+164647,Dirty 30,Comedy|Romance,2016.0
+164655,Gimme Danger,Documentary,2016.0
+164753,Anything for Love,Romance,2016.0
+164881,Night Guards,Action|Sci-Fi,2016.0
+164909,La La Land,Comedy|Drama|Romance,2016.0
+164917,13th,Documentary,2016.0
+165075,London Town,Drama,2016.0
+165101,Inferno,Mystery|Thriller,2016.0
+165103,Keeping Up with the Joneses,Comedy,2016.0
+165139,Wild Oats,Comedy,2016.0
+165343,The Rocky Horror Picture Show: Let's Do the Time Warp Again,Comedy|Horror|Sci-Fi|Thriller,2016.0
+165347,Jack Reacher: Never Go Back,Action|Crime|Drama|Mystery|Thriller,2016.0
+165483,Joe Rogan: Triggered,Comedy,2016.0
+165549,Manchester by the Sea,Drama,2016.0
+165551,Lion,Drama,2016.0
+165635,The Thinning,Thriller,2016.0
+165639,While You Were Fighting: A Thor Mockumentary,Comedy|Fantasy|Sci-Fi,2016.0
+165645,Bad Santa 2,Comedy,2016.0
+165671,Ice Guardians,Documentary,2016.0
+165843,Risk,Documentary,2016.0
+165947,The True Memoirs of an International Assassin,Action|Comedy,2016.0
+165969,HyperNormalisation,Documentary,2016.0
+166015,The African Doctor,Comedy|Drama,2016.0
+166291,A Silent Voice,Animation|Drama|Romance,2016.0
+166461,Moana,Adventure|Animation|Children|Comedy|Fantasy,2016.0
+166492,Office Christmas Party,Comedy,2016.0
+166526,The Space Between Us,Adventure|Sci-Fi,2016.0
+166528,Rogue One: A Star Wars Story,Action|Adventure|Fantasy|Sci-Fi,2016.0
+166534,Split,Drama|Horror|Thriller,2017.0
+166558,Underworld: Blood Wars,Action|Horror,2016.0
+166568,Miss Sloane,Thriller,2016.0
+166635,Passengers,Adventure|Drama|Romance|Sci-Fi,2016.0
+166643,Hidden Figures,Drama,2016.0
+166705,Fences,Drama,2016.0
+166946,The Founder,Drama,2016.0
+167018,Why Him?,Comedy,2016.0
+167036,Sing,Animation|Children|Comedy,2016.0
+167064,I Am Not Your Negro,Documentary,2017.0
+167370,Assassin's Creed,Action|Adventure|Sci-Fi,2016.0
+167380,A Dog's Purpose,Comedy|Drama,2017.0
+167634,Fist Fight,Comedy,2017.0
+167732,A Street Cat Named Bob,Comedy|Drama,2016.0
+167746,The Lego Batman Movie,Action|Animation|Comedy,2017.0
+167790,The Good Boy,Children|Comedy|Drama,2016.0
+167854,"Dana Carvey: Straight White Male, 60",Comedy,2016.0
+168090,Kizumonogatari II: Passionate Blood,Animation|Fantasy|Mystery,2016.0
+168174,Jim Gaffigan: Cinco,Comedy,2017.0
+168218,Kizumonogatari III: Cold Blood,Animation|Fantasy|Mystery,2017.0
+168248,John Wick: Chapter Two,Action|Crime|Thriller,2017.0
+168250,Get Out,Horror,2017.0
+168252,Logan,Action|Sci-Fi,2017.0
+168254,Kong: Skull Island,Action|Adventure|Fantasy,2017.0
+168266,T2: Trainspotting,Crime|Drama,2017.0
+168326,The Big Sick,Comedy|Romance,2017.0
+168350,100 Streets,Drama,2016.0
+168366,Beauty and the Beast,Fantasy|Romance,2017.0
+168418,The Boss Baby,Animation|Children|Comedy,2017.0
+168456,Mercury Plains,Action|Adventure|Drama,2016.0
+168492,Call Me by Your Name,Drama|Romance,2017.0
+168608,Mudbound,Drama,2017.0
+168612,Ghost in the Shell,Action|Drama|Sci-Fi,2017.0
+168632,Bill Burr: Walk Your Way Out,Comedy,2017.0
+168712,Fifty Shades Darker,Drama|Romance,2017.0
+168846,Neal Brennan: 3 Mics,Comedy,2017.0
+169180,American Fable,Thriller,2017.0
+169670,The Void,Horror,2016.0
+169958,Buster's Mal Heart,Drama|Mystery,2017.0
+169982,Power Rangers,Action|Adventure|Sci-Fi,2017.0
+169984,Alien: Covenant,Action|Horror|Sci-Fi|Thriller,2017.0
+169992,Free Fire,Action|Crime|Drama,2017.0
+170357,Dave Chappelle: The Age of Spin,Comedy,2017.0
+170399,CHiPS,Action|Comedy|Drama,2017.0
+170401,Table 19,Comedy|Drama,2017.0
+170411,Dave Chappelle: Deep in the Heart of Texas,Comedy,2017.0
+170697,Gifted,Drama,2017.0
+170813,Baywatch,Action|Comedy,2017.0
+170817,Snatched,Action|Comedy,2017.0
+170827,The Mummy,Action|Adventure|Fantasy|Horror|Thriller,2017.0
+170875,The Fate of the Furious,Action|Crime|Drama|Thriller,2017.0
+170897,Sandy Wexler,Comedy,2017.0
+170907,Betting on Zero,Documentary,2016.0
+170937,Win It All,Comedy,2017.0
+170939,Captain Underpants: The First Epic Movie,Action|Animation|Children|Comedy,2017.0
+170945,It Comes at Night,Horror|Mystery|Thriller,2017.0
+170957,Cars 3,Adventure|Animation|Comedy,2017.0
+171011,Planet Earth II,Documentary,2016.0
+171023,The Hero,Drama,2017.0
+171251,"Nobody Speak: Hulk Hogan, Gawker and Trials of a Free Press",Documentary,2017.0
+171701,The Death of Louis XIV,Drama,2016.0
+171759,The Beguiled,Drama|Thriller|Western,2017.0
+171763,Baby Driver,Action|Crime|Thriller,2017.0
+171765,Okja,Action|Adventure|Drama|Sci-Fi,2017.0
+171867,Rough Night,Comedy|Drama,2017.0
+172013,Stefan Zweig: Farewell to Europe,Drama,2016.0
+172461,Get Me Roger Stone,Documentary,2017.0
+172547,Despicable Me 3,Adventure|Animation|Children|Comedy,2017.0
+172705,Tickling Giants,Documentary,2017.0
+173145,War for the Planet of the Apes,Action|Adventure|Drama|Sci-Fi,2017.0
+173197,The Square,Drama,2017.0
+173205,The Meyerowitz Stories,Comedy,2017.0
+173209,War Machine,Comedy|Drama|War,2017.0
+173235,Tokyo Idols,Documentary,2017.0
+173253,Vir Das: Abroad Understanding,Comedy,2017.0
+173255,"Norm Macdonald: Hitler's Dog, Gossip & Trickery",Comedy,2017.0
+173291,Valerian and the City of a Thousand Planets,Action|Adventure|Sci-Fi,2017.0
+173317,Shadow World,Documentary,2016.0
+173751,Tiger Raid,Thriller,2016.0
+173925,Seven Sisters,Sci-Fi|Thriller,2017.0
+173941,Atomic Blonde,Thriller,2017.0
+174045,Goon: Last of the Enforcers,Comedy,2017.0
+174055,Dunkirk,Action|Drama|Thriller|War,2017.0
+174681,"Oh, Hello: On Broadway",Comedy,2017.0
+174727,Good Time,Crime|Drama,2017.0
+174815,The House,Comedy,2017.0
+174909,Logan Lucky,Comedy,2017.0
+175197,The Dark Tower,Fantasy|Horror|Sci-Fi|Western,2017.0
+175199,Annabelle: Creation,Horror,2017.0
+175303,It,Horror,2017.0
+175475,The Emoji Movie,Animation|Children|Comedy,2017.0
+175485,Death Note,Horror|Thriller,2017.0
+175569,Wind River,Action|Crime|Mystery|Thriller,2017.0
+175577,Rory Scovel Tries Stand-Up for the First Time,Comedy,2017.0
+175585,Shot Caller,Action|Crime|Drama|Thriller,2017.0
+175661,The Hitman's Bodyguard,Action|Comedy,2017.0
+175693,Rick and Morty: State of Georgia Vs. Denver Fenton Allen,Comedy|Crime,2016.0
+175707,A German Life,Documentary,2016.0
+175743,Self-criticism of a Bourgeois Dog,Comedy,2017.0
+176051,LEGO DC Super Hero Girls: Brain Drain,Animation,2017.0
+176101,Kingsman: The Golden Circle,Action|Adventure|Comedy,2017.0
+176329,Ari Shaffir: Double Negative,Comedy,2017.0
+176371,Blade Runner 2049,Sci-Fi,2017.0
+176389,The Nut Job 2: Nutty by Nature,Adventure|Animation|Children|Comedy,2017.0
+176419,Mother!,Drama|Horror|Mystery|Thriller,2017.0
+176423,Icarus,Documentary,2017.0
+176579,Cage Dive,Drama|Horror|Thriller,2017.0
+176751,American Made,Crime|Thriller,2017.0
+176805,Little Boxes,Comedy|Drama,2017.0
+176935,Geostorm,Action,2017.0
+177185,Maz Jobrani: Immigrant,Comedy,2017.0
+177285,Sword Art Online The Movie: Ordinal Scale,Action|Adventure|Animation|Fantasy|Sci-Fi,2017.0
+177593,"Three Billboards Outside Ebbing, Missouri",Crime|Drama,2017.0
+177615,Lady Bird,Comedy,2017.0
+177763,Murder on the Orient Express,Crime|Drama|Mystery,2017.0
+177765,Coco,Adventure|Animation|Children,2017.0
+177939,"The Night Is Short, Walk on Girl",Animation|Romance,2017.0
+178061,"I, Tonya",Drama,2017.0
+178111,"Fireworks, Should We See It from the Side or the Bottom?",Animation,2017.0
+178323,Gaga: Five Foot Two,Documentary,2017.0
+178615,Front Cover,Comedy|Drama|Romance,2016.0
+178827,Paddington 2,Adventure|Animation|Children|Comedy,2017.0
+179053,2048: Nowhere to Run,Sci-Fi|Thriller,2017.0
+179119,The Death of Stalin,Comedy,2017.0
+179133,Loving Vincent,Animation|Crime|Drama,2017.0
+179135,Blue Planet II,Documentary,2017.0
+179211,Christina P: Mother Inferior,Comedy,2017.0
+179401,Jumanji: Welcome to the Jungle,Action|Adventure|Children,2017.0
+179491,Mayhem,Action|Horror,2017.0
+179511,Emerald Green,Adventure|Drama|Fantasy|Romance,2016.0
+179709,Wonder Wheel,Drama,2017.0
+179749,Creep 2,Comedy|Horror,2017.0
+179813,LBJ,Drama,2017.0
+179815,"Roman J. Israel, Esq.",Drama|Thriller,2017.0
+179817,Darkest Hour,Drama|War,2017.0
+179819,Star Wars: The Last Jedi,Action|Adventure|Fantasy|Sci-Fi,2017.0
+179953,A Bad Moms Christmas,Comedy,2017.0
+180031,The Shape of Water,Adventure|Drama|Fantasy,2017.0
+180045,Molly's Game,Drama,2017.0
+180095,Wonder,Drama,2017.0
+180231,Daddy's Home 2,Comedy|Drama,2017.0
+180265,Jim & Andy: The Great Beyond,Documentary,2017.0
+180297,The Disaster Artist,Comedy|Drama,2017.0
+180497,The Post,Drama|Thriller,2017.0
+180985,The Greatest Showman,Drama,2017.0
+180987,Ferdinand,Animation|Children|Comedy,2017.0
+181065,Jack Whitehall: At Large,Comedy,2017.0
+181139,Lynne Koplitz: Hormonal Beast,Comedy,2017.0
+181315,Phantom Thread,Drama|Romance,2017.0
+181659,Craig Ferguson: Tickle Fight,Comedy,2017.0
+182715,Annihilation,Adventure|Mystery|Sci-Fi|Thriller,2018.0
+182749,Judd Apatow: The Return,Comedy,2017.0
+182823,Bright,Action|Crime|Fantasy,2017.0
+183011,The Commuter,Crime|Drama|Mystery|Thriller,2018.0
+183197,Dave Chappelle: Equanimity,Comedy,2017.0
+183199,Quest,Documentary,2017.0
+183227,Dave Chappelle: The Bird Revelation,Comedy,2017.0
+183295,Insidious: The Last Key,Horror|Mystery|Thriller,2018.0
+183611,Game Night,Action|Comedy|Crime|Horror,2018.0
+183635,Maze Runner: The Death Cure,Action|Mystery|Sci-Fi|Thriller,2018.0
+183897,Isle of Dogs,Animation|Comedy,2018.0
+183911,The Clapper,Comedy,2018.0
+183959,Tom Segura: Disgraceful,Comedy,2018.0
+184015,When We First Met,Comedy,2018.0
+184253,The Cloverfield Paradox,Horror|Mystery|Sci-Fi|Thriller,2018.0
+184471,Tomb Raider,Action|Adventure|Fantasy,2018.0
+184641,Fullmetal Alchemist 2018,Action|Adventure|Fantasy,2017.0
+184721,First Reformed,Drama|Thriller,2017.0
+184791,Fred Armisen: Standup for Drummers,Comedy,2018.0
+184931,Death Wish,Action|Crime|Drama|Thriller,2018.0
+184987,A Wrinkle in Time,Adventure|Children|Fantasy|Sci-Fi,2018.0
+184997,"Love, Simon",Comedy|Drama,2018.0
+185029,A Quiet Place,Drama|Horror|Thriller,2018.0
+185031,Alpha,Adventure|Thriller,2018.0
+185033,I Kill Giants,Drama|Fantasy|Thriller,2018.0
+185435,"Game Over, Man!",Action|Comedy,2018.0
+185473,Blockers,Comedy,2018.0
+185585,Pacific Rim: Uprising,Action|Fantasy|Sci-Fi,2018.0
+186587,Rampage,Action|Adventure|Sci-Fi,2018.0
+187031,Jurassic World: Fallen Kingdom,Action|Adventure|Drama|Sci-Fi|Thriller,2018.0
+187541,Incredibles 2,Action|Adventure|Animation|Children,2018.0
+187593,Deadpool 2,Action|Comedy|Sci-Fi,2018.0
+187595,Solo: A Star Wars Story,Action|Adventure|Children|Sci-Fi,2018.0
+187717,Won't You Be My Neighbor?,Documentary,2018.0
+188189,Sorry to Bother You,Comedy|Fantasy|Sci-Fi,2018.0
+188301,Ant-Man and the Wasp,Action|Adventure|Comedy|Fantasy|Sci-Fi,2018.0
+188675,Dogman,Crime|Drama,2018.0
+188751,Mamma Mia: Here We Go Again!,Comedy|Romance,2018.0
+188797,Tag,Comedy,2018.0
+188833,The Man Who Killed Don Quixote,Adventure|Comedy|Fantasy,2018.0
+189043,Boundaries,Comedy|Drama,2018.0
+189111,Spiral,Documentary,2018.0
+189333,Mission: Impossible - Fallout,Action|Adventure|Thriller,2018.0
+189381,SuperFly,Action|Crime|Thriller,2018.0
+189713,BlacKkKlansman,Comedy|Crime|Drama,2018.0
+190183,The Darkest Minds,Sci-Fi|Thriller,2018.0
+190209,Jeff Ross Roasts the Border,Comedy,2017.0
+190215,Liquid Truth,Drama,2017.0
+191005,Gintama,Action|Adventure|Comedy|Sci-Fi,2017.0
+193581,Black Butler: Book of the Atlantic,Action|Animation|Comedy|Fantasy,2017.0
+193583,No Game No Life: Zero,Animation|Comedy|Fantasy,2017.0
+193585,Flint,Drama,2017.0
+193587,Bungo Stray Dogs: Dead Apple,Action|Animation,2018.0

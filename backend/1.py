@@ -1,0 +1,38 @@
+import os
+import pandas as pd
+from sklearn.metrics.pairwise import cosine_similarity
+
+def recommender_ibcf_direct(df, user_id, top_n=10, k=5):
+    ratings_matrix = df.pivot_table(index="userId", columns="title", values="rating", fill_value=0)
+    if user_id not in ratings_matrix.index:
+        return []
+    item_sim = cosine_similarity(ratings_matrix.T)
+    item_sim_df = pd.DataFrame(item_sim, index=ratings_matrix.columns, columns=ratings_matrix.columns)
+    scores = {}
+    user_ratings = ratings_matrix.loc[user_id]
+    for film in ratings_matrix.columns:
+        if user_ratings[film] == 0:
+            neighbors = item_sim_df[film].sort_values(ascending=False).drop(film).head(k)
+            num, den = 0.0, 0.0
+            for neighbor_film, sim in neighbors.items():
+                r = user_ratings[neighbor_film]
+                if r > 0:
+                    num += sim * r
+                    den += abs(sim)
+            if den > 0:
+                scores[film] = num / den
+    return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_n]
+
+# ✅ Construire chemin absolu vers le CSV
+BASE_DIR = os.path.dirname(__file__)   # dossier où se trouve ce script
+CSV_PATH = os.path.join(BASE_DIR, "movies_enriched.csv")
+
+# Charger le CSV
+df_full = pd.read_csv(CSV_PATH, encoding="utf-8", sep=",", on_bad_lines="skip")
+
+# Exemple d’appel
+recs = recommender_ibcf_direct(df_full, user_id="6924d13a738e233a54b07eb7", top_n=20, k=41)
+
+print(f"=== Recommandations IBCF pour l’utilisateur 6924d13a738e233a54b07eb7 (k=41) ===")
+for title, score in recs:
+    print(f"- {title} (score={score:.3f})")
