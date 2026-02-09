@@ -96,7 +96,7 @@ const CardHolder = () => {
         })}
       </div>
       <div className="text-center px-4 border-t-2 border-black w-full">
-        <h2 className="text-3xl md:text-4xl font-parisienne text-black mb-1 mt-10">
+        <h2 className="text-3xl md:text-4xl font-parisienne text-black mb-1 mt-10 font-semibold">
           Découvrez nos catégories de films
         </h2>
         <p className=" text-gray-700 text-lg font-cursive">
