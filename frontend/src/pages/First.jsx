@@ -7,7 +7,7 @@ import Footer from "../components/footer";
 
 function First() {
   return (
-  <div className="flex-grow flex-col flex items-center justify-center mt-1">
+  <div className="flex-grow flex-col flex items-center justify-center">
 <CardHolder/>
 <div id="apropos">
 <Apropos/>
