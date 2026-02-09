@@ -16,12 +16,15 @@ function Firstpage() {
         </div>
 
         {/* TITRE RecommendIt */}
-        <div className="flex flex-row mt-28 justify-center">
-          <h1 className="md:text-9xl text-6xl font-bold tracking-wide font-parisienne text-outline">
-            Recommend
-            <span className="text-black bg-white px-3 rounded-lg ml-3">It</span>
-          </h1>
-        </div>
+<div className="flex flex-row mt-16 sm:mt-24 justify-center px-2">
+  <h1 className="text-4xl sm:text-6xl md:text-9xl font-bold tracking-wide font-parisienne text-outline text-center">
+    Recommend
+    <span className="text-black bg-white px-2 sm:px-3 rounded-lg ml-2 sm:ml-3">
+      It
+    </span>
+  </h1>
+</div>
+
 
         {/* PAGE FIRST */}
         <First />
