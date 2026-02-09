@@ -66,33 +66,25 @@ const CardHolder = () => {
 
   return (
     <section className="flex flex-col items-center pt-20 pb-5 gap-10 w-full">
-      <div
-        className={`relative w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl h-72 flex justify-center items-end transition-all duration-700 ease-out transform ${
-          visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-95'
-        }`}
-      >
-        {movies.map((movie, i) => {
-          const position = getPosition(i);
-          return (
-            <div
-              key={movie.id}
-              className={`absolute transition-all duration-700 cursor-pointer ${
-                position === 'center'
-                  ? 'scale-100 z-10 opacity-100'
-                  : position === 'left'
-                  ? 'translate-x-[-120px] md:translate-x-[-150px] md:scale-90 scale-[0.6] opacity-40 md:opacity-50 z-0'
-                  : position === 'right'
-                  ? 'translate-x-[120px] md:translate-x-[150px] md:scale-90 scale-[0.6] opacity-40 md:opacity-50 z-0'
-                  : 'opacity-0 pointer-events-none'
-              }`}
-              onClick={() => setIndex(i)}
-            >
-              <MovieCard
-                image={movie.image}
-                title={movie.title}
-                description={movie.description}
-              />
-            </div>
+<div
+  className={`absolute transition-all duration-700 cursor-pointer ${
+    position === 'center'
+      ? 'scale-100 z-10 opacity-100'
+      : position === 'left'
+      ? 'translate-x-[-80px] sm:translate-x-[-120px] md:translate-x-[-150px] scale-75 sm:scale-90 opacity-40 sm:opacity-50 z-0'
+      : position === 'right'
+      ? 'translate-x-[80px] sm:translate-x-[120px] md:translate-x-[150px] scale-75 sm:scale-90 opacity-40 sm:opacity-50 z-0'
+      : 'opacity-0 pointer-events-none'
+  }`}
+  onClick={() => setIndex(i)}
+>
+  <MovieCard
+    image={movie.image}
+    title={movie.title}
+    description={movie.description}
+  />
+</div>
+
           );
         })}
       </div>
