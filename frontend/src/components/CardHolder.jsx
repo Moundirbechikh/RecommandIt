@@ -84,7 +84,6 @@ const CardHolder = () => {
     description={movie.description}
   />
 </div>
-
           );
         })}
       </div>
