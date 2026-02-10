@@ -65,7 +65,7 @@ const CardHolder = () => {
   };
 
   return (
-    <section className="flex flex-col items-center pt-17 sm:pt-20 pb-5 gap-10 w-full">
+    <section className="flex flex-col items-center pt-18 sm:pt-20 pb-5 gap-10 w-full">
 <div
         className={`relative w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl h-72 flex justify-center items-end transition-all duration-700 ease-out transform ${
           visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-95'
