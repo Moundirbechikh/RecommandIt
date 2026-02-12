@@ -20,7 +20,7 @@ function CardRecommendation() {
     async function fetchRecommendations() {
       try {
         const token = localStorage.getItem("token"); // JWT si utilisé
-        const response = await fetch("http://localhost:5000/api/recommendations/content-based", {
+        const response = await fetch("https://recommandit.onrender.com/api/recommendations/content-based", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
