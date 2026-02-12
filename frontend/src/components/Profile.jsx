@@ -22,7 +22,7 @@ function Profile({ user }) {
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/rates/profile", {
+        const res = await fetch("https://recommandit.onrender.com/api/rates/profile", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
         });
         const data = await res.json();
@@ -52,7 +52,7 @@ function Profile({ user }) {
   // ✅ Mettre à jour le profil
   const handleUpdate = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/auth/me", {
+      const res = await fetch("https://recommandit.onrender.com/api/auth/me", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
