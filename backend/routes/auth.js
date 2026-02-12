@@ -8,7 +8,9 @@ const router = express.Router();
 
 // Générer un JWT
 function signToken(user) {
-  return jwt.sign(
+  console.log("🧪 JWT_SECRET existe ?", !!process.env.JWT_SECRET);
+
+  const token = jwt.sign(
     {
       sub: user._id,
       userId: user.userId,
@@ -17,6 +19,8 @@ function signToken(user) {
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
+
+  return token;
 }
 
 // Register
@@ -34,7 +38,7 @@ router.post("/register", async (req, res) => {
     const userId = await getNextUserId();
 
     const user = await User.create({
-      userId,
+     ️      userId,
       username,
       email,
       LastName,
@@ -45,6 +49,9 @@ router.post("/register", async (req, res) => {
     });
 
     const token = signToken(user);
+
+    console.log("🟢 Token généré REGISTER:", token);
+
     res.status(201).json({
       user: {
         userId: user.userId,
@@ -67,6 +74,9 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
+
+    console.log("📥 Login request:", { email });
+
     const user = await User.findOne({ email });
     if (!user) return res.status(401).json({ error: "Identifiants invalides" });
 
@@ -74,6 +84,8 @@ router.post("/login", async (req, res) => {
     if (!ok) return res.status(401).json({ error: "Identifiants invalides" });
 
     const token = signToken(user);
+
+    console.log("🟢 Token généré LOGIN:", token);
 
     res.json({
       user: {
@@ -96,6 +108,8 @@ router.post("/login", async (req, res) => {
 // Profil (lecture)
 router.get("/me", requireAuth, async (req, res) => {
   try {
+    console.log("👤 /me appelé avec user:", req.user);
+
     const user = await User.findOne({ userId: req.user.userId }).lean();
     if (!user) return res.status(404).json({ error: "Utilisateur introuvable" });
 
@@ -106,7 +120,7 @@ router.get("/me", requireAuth, async (req, res) => {
   }
 });
 
-// ✅ Modifier le profil (incluant username et password)
+// Modifier le profil
 router.put("/me", requireAuth, async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -121,9 +135,8 @@ router.put("/me", requireAuth, async (req, res) => {
     if (status !== undefined) user.status = status;
     if (username !== undefined) user.username = username;
 
-    // ⚠️ Mettre à jour le mot de passe si fourni
     if (password !== undefined && password.trim() !== "") {
-      user.password = password; // le hook mongoose `pre('save')` doit re-hasher
+      user.password = password;
     }
 
     await user.save();
