@@ -17,7 +17,7 @@ function Dashboard({ onLogout, user }) {
   useEffect(() => {
     const fetchFavorites = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/user/favorites", {
+        const res = await fetch("https://recommandit.onrender.com/api/user/favorites", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
         });
         const favData = await res.json();
@@ -33,7 +33,7 @@ function Dashboard({ onLogout, user }) {
   useEffect(() => {
     const fetchRatingCount = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/filtrage/rating-count", {
+        const res = await fetch("https://recommandit.onrender.com/api/filtrage/rating-count", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
         });
         const data = await res.json();
