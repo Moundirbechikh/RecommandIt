@@ -18,9 +18,9 @@ function Films() {
 
   useEffect(() => {
     let endpoint = "https://recommandit.onrender.com/api/movies";
-    if (section === "favoris") endpoint = "http://localhost:5000/api/user/favorites";
-    else if (section === "recents") endpoint = "http://localhost:5000/api/movies/latestAdd";
-    else if (section === "tendances") endpoint = "http://localhost:5000/api/movies/latest";
+    if (section === "favoris") endpoint = "https://recommandit.onrender.com/api/user/favorites";
+    else if (section === "recents") endpoint = "https://recommandit.onrender.com/api/movies/latestAdd";
+    else if (section === "tendances") endpoint = "https://recommandit.onrender.com/api/movies/latest";
 
     const token = localStorage.getItem("token") || "";
 
@@ -67,7 +67,7 @@ function Films() {
 
     // Charger favoris (sauf si on est déjà dans la section favoris)
     if (section !== "favoris") {
-      fetch("http://localhost:5000/api/user/favorites", {
+      fetch("https://recommandit.onrender.com/api/user/favorites", {
         headers: { Authorization: `Bearer ${token}` },
       })
         .then((res) => res.json())
