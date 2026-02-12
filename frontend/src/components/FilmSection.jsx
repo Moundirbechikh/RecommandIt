@@ -5,9 +5,15 @@ import { NavLink } from "react-router-dom";
 const getPositionClass = (pos) => {
   if (pos === "center") return "scale-100 z-10 opacity-100";
   if (pos === "left")
-    return "translate-x-[-120px] md:translate-x-[-150px] md:scale-90 scale-[0.8] opacity-50 z-0";
+    return `
+      translate-x-[-80px] sm:translate-x-[-120px] md:translate-x-[-150px]
+      scale-[0.7] sm:scale-[0.8] md:scale-90 opacity-50 z-0
+    `;
   if (pos === "right")
-    return "translate-x-[120px] md:translate-x-[150px] md:scale-90 scale-[0.8] opacity-50 z-0";
+    return `
+      translate-x-[80px] sm:translate-x-[120px] md:translate-x-[150px]
+      scale-[0.7] sm:scale-[0.8] md:scale-90 opacity-50 z-0
+    `;
   return "opacity-0 pointer-events-none";
 };
 
@@ -45,17 +51,23 @@ function FilmSection({ title, movies, link }) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-2 w-full py-5 rounded-xl mt-12">
+    <div className="flex flex-col items-center gap-2 w-full py-5 rounded-xl md:mt-12">
       {/* Titre */}
-      <h2 className="text-3xl md:text-4xl font-parisienne text-black mb-4 font-semibold">{title}</h2>
+      <h2 className="text-3xl sm:text-3xl md:text-4xl font-parisienne text-black mb-2 sm:mb-4 font-semibold">
+        {title}
+      </h2>
 
       {/* Carrousel ou message */}
       {displayMovies.length === 0 ? (
         <div className="text-center text-gray-600 font-cursive mb-6">
-          Aucun film trouvé. <NavLink to="/films" className="text-black underline">Aller voir les films</NavLink>
+          Aucun film trouvé.{" "}
+          <NavLink to="/films" className="text-black underline">
+            Aller voir les films
+          </NavLink>
         </div>
       ) : (
-        <div className="relative w-full max-w-sm sm:max-w-lg md:max-w-2xl lg:max-w-4xl h-72 flex justify-center items-end">
+        <div className="relative w-full max-w-xs sm:max-w-lg md:max-w-2xl lg:max-w-4xl 
+                        h-64 sm:h-72 flex justify-center items-end">
           {displayMovies.map((movie, i) => {
             const pos = getPosition(i);
             return (
@@ -64,7 +76,6 @@ function FilmSection({ title, movies, link }) {
                 className={`absolute transition-all duration-700 cursor-pointer ${getPositionClass(pos)}`}
                 onClick={() => setIndex(i)}
               >
-                {/* En carrousel → pas d’actions */}
                 <FilmCard movie={movie} showActions={false} />
               </div>
             );
@@ -75,7 +86,8 @@ function FilmSection({ title, movies, link }) {
       {/* Bouton Voir tous */}
       <NavLink
         to={link}
-        className="px-6 py-2 rounded-lg font-parisienne bg-black text-white hover:bg-white hover:text-black transition-transform hover:scale-105"
+        className="px-6 py-2 rounded-lg font-parisienne bg-black text-white 
+                   hover:bg-white hover:text-black transition-transform hover:scale-105"
       >
         Voir tous les films
       </NavLink>
