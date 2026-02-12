@@ -16,7 +16,7 @@ function MainSections() {
     const token = localStorage.getItem("token") || "";
 
     // ✅ Charger favoris
-    fetch("http://localhost:5000/api/user/favorites", {
+    fetch("https://recommandit.onrender.com/api/user/favorites", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
@@ -26,7 +26,7 @@ function MainSections() {
       .catch((err) => console.error("Erreur fetch favoris:", err));
 
     // ✅ Charger tendances
-    fetch("http://localhost:5000/api/movies/latest")
+    fetch("https://recommandit.onrender.com/api/movies/latest")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setTendances(data);
@@ -34,7 +34,7 @@ function MainSections() {
       .catch((err) => console.error("Erreur fetch tendances:", err));
 
     // ✅ Charger récemment notés
-    fetch("http://localhost:5000/api/movies/latestAdd", {
+    fetch("https://recommandit.onrender.com/api/movies/latestAdd", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
