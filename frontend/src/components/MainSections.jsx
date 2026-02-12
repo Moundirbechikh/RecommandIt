@@ -65,7 +65,7 @@ function MainSections() {
   const currentSection = sections[index];
 
   return (
-    <main className="flex-1 p-8 flex justify-center items-center">
+    <main className="flex-1 pb-8 px-8 flex justify-center items-center">
       <div
         className={`transition-all duration-1000 ease-in-out ${
           visible ? "opacity-100 scale-100" : "opacity-0 scale-110"
