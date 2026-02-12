@@ -55,7 +55,7 @@ function Dashboard({ onLogout, user }) {
         {/* Header */}
         <header className="flex md:flex-row flex-col justify-between min-h-screen border-b-2 border-black mt-20 md:mt-0">
           <div className="flex flex-col justify-center">
-            <h1 className="md:text-9xl flex flex-row justify-center text-8xl font-bold tracking-wide font-parisienne text-outline text-black">
+            <h1 className="md:text-9xl flex flex-row justify-center sm:text-8xl text-7xl font-bold tracking-wide font-parisienne text-outline text-black">
               Bienvenue
             </h1>
             <div className="flex flex-row justify-center font-parisienne font-semibold">
