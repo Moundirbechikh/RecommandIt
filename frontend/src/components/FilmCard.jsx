@@ -46,7 +46,7 @@ function FilmCard({ movie, showActions = true, isFavorite = false, hideRating = 
     }
     try {
       if (!favorite) {
-        const res = await fetch("http://localhost:5000/api/user/favorites", {
+        const res = await fetch("https://recommandit.onrender.com/api/user/favorites", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -58,7 +58,7 @@ function FilmCard({ movie, showActions = true, isFavorite = false, hideRating = 
         setFavorite(true);
       } else {
         const res = await fetch(
-          `http://localhost:5000/api/user/favorites/${movie.movieId}`,
+          `https://recommandit.onrender.com/api/user/favorites/${movie.movieId}`,
           {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
@@ -84,7 +84,7 @@ function FilmCard({ movie, showActions = true, isFavorite = false, hideRating = 
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/rates", {
+      const res = await fetch("https://recommandit.onrender.com/api/rates", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
