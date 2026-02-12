@@ -17,7 +17,7 @@ function Films() {
 
 
   useEffect(() => {
-    let endpoint = "http://localhost:5000/api/movies";
+    let endpoint = "https://recommandit.onrender.com/api/movies";
     if (section === "favoris") endpoint = "http://localhost:5000/api/user/favorites";
     else if (section === "recents") endpoint = "http://localhost:5000/api/movies/latestAdd";
     else if (section === "tendances") endpoint = "http://localhost:5000/api/movies/latest";
@@ -37,7 +37,7 @@ function Films() {
           // ✅ Charger aussi les notes de l’utilisateur
           let userRatings = [];
           try {
-            const resRates = await fetch("http://localhost:5000/api/rates", {
+            const resRates = await fetch("https://recommandit.onrender.com/api/rates", {
               headers: { Authorization: `Bearer ${token}` },
             });
             if (resRates.ok) {
