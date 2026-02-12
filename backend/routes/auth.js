@@ -37,17 +37,16 @@ router.post("/register", async (req, res) => {
 
     const userId = await getNextUserId();
 
-    const user = await User.create({
-     ️      userId,
-      username,
-      email,
-      LastName,
-      FirstName,
-      password,
-      country: country || "Unknown",
-      status: status || "active",
-    });
-
+const user = await User.create({
+  userId,
+  username,
+  email,
+  LastName,
+  FirstName,
+  password,
+  country: country || "Unknown",
+  status: status || "active",
+});
     const token = signToken(user);
 
     console.log("🟢 Token généré REGISTER:", token);
