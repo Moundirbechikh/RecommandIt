@@ -18,7 +18,7 @@ function Ubcf() {
       try {
         const token = localStorage.getItem("token");
 
-        const response = await fetch("http://localhost:5000/api/filtrage/ubcf", {
+        const response = await fetch("https://recommandit.onrender.com/api/filtrage/ubcf", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
