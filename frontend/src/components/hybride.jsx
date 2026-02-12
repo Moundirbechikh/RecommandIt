@@ -20,7 +20,7 @@ function Hybride() {
     async function fetchRecommendations() {
       try {
         const token = localStorage.getItem("token"); // JWT si utilisé
-        const response = await fetch("http://localhost:5000/api/hybride", {
+        const response = await fetch("https://recommandit.onrender.com/api/hybride", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
