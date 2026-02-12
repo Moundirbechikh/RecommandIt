@@ -49,7 +49,7 @@ function Dashboard({ onLogout, user }) {
   const notEnoughRatings = ratingCount !== null && ratingCount < 11;
 
   return (
-    <div className="border-t-2 border-black min-h-screen h-full flex flex-col bg-gradient-to-t from-stone-400 via-stone-300 to-stone-200 ">
+    <div className="border-t-2 border-black sm:min-h-screen h-full flex flex-col bg-gradient-to-t from-stone-400 via-stone-300 to-stone-200 ">
       <div className="min-h-screen h-full">
 
         {/* Header */}
