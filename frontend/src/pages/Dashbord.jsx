@@ -53,7 +53,7 @@ function Dashboard({ onLogout, user }) {
       <div className="sm:min-h-screen h-full">
 
         {/* Header */}
-        <header className="flex md:flex-row flex-col justify-between min-h-screen border-b-2 border-black mt-20 md:mt-0">
+        <header className="flex md:flex-row flex-col justify-between sm:min-h-screen border-b-2 border-black mt-20 md:mt-0">
           <div className="flex flex-col justify-center">
             <h1 className="md:text-9xl flex flex-row justify-center sm:text-9xl text-7xl font-bold tracking-wide font-parisienne text-outline text-black">
               Bienvenue
