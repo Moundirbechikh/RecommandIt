@@ -2,7 +2,8 @@ from fastapi import FastAPI, Body
 from pydantic import BaseModel
 from typing import List
 import pandas as pd
-import os
+import requests
+import io
 
 from algo1 import build_description_clean_one
 from ubcf import recommender_ubcf_direct
@@ -13,9 +14,6 @@ from cb import ContentBasedRecommender
 # Initialiser FastAPI
 # =========================
 app = FastAPI()
-
-# Chemin relatif vers le CSV
-CSV_PATH = os.path.join(os.path.dirname(__file__), "../backend/movies_enriched.csv")
 
 # =========================
 # Schémas
@@ -55,30 +53,46 @@ class HybridRequest(BaseModel):
     userRatings: List[RatingsEntry] = []
 
 # =========================
-# Content-Based Recommender
-# =========================
-cb_reco = ContentBasedRecommender(csv_path=CSV_PATH)
-
-# =========================
-# Utilitaire : charger et nettoyer le CSV
+# Utilitaire : charger et nettoyer le CSV depuis backend Node.js
 # =========================
 def load_csv():
-    df = pd.read_csv(
-        CSV_PATH,
-        encoding="utf-8",
-        sep=",",
-        quotechar='"',
-        escapechar="\\",
-        engine="python",
-        on_bad_lines="skip"
-    )
-    df.columns = df.columns.str.strip()
-    df.columns = df.columns.str.replace("\ufeff", "", regex=False)
-    if "userId" in df.columns:
-        df["userId"] = df["userId"].astype(str)
-    else:
-        print("⚠️ load_csv: colonne 'userId' introuvable. Colonnes disponibles:", df.columns.tolist())
-    return df
+    try:
+        backend_url = "http://localhost:5000/api/csv/movies"  # ⚠️ route backend locale
+        response = requests.get(backend_url)
+        response.raise_for_status()
+
+        df = pd.read_csv(
+            io.StringIO(response.text),
+            encoding="utf-8",
+            sep=",",
+            quotechar='"',
+            escapechar="\\",
+            engine="python",
+            on_bad_lines="skip"
+        )
+
+        df.columns = df.columns.str.strip()
+        df.columns = df.columns.str.replace("\ufeff", "", regex=False)
+
+        if "userId" in df.columns:
+            df["userId"] = df["userId"].astype(str)
+        else:
+            print("⚠️ load_csv: colonne 'userId' introuvable. Colonnes disponibles:", df.columns.tolist())
+
+        return df
+
+    except Exception as e:
+        print("❌ Erreur lors du chargement du CSV depuis backend:", e)
+        return pd.DataFrame()
+
+# Charger le CSV une fois et sauvegarder temporairement pour ContentBasedRecommender
+df_init = load_csv()
+df_init.to_csv("movies_temp.csv", index=False)
+
+# =========================
+# Content-Based Recommender
+# =========================
+cb_reco = ContentBasedRecommender(csv_path="movies_temp.csv")
 
 # =========================
 # UBCF
@@ -95,7 +109,6 @@ async def ubcf_recommend(req: UserRequest):
         top_n=req.top_n,
         k=req.k
     )
-    print(f"📊 UBCF: user {req.userId} a {len(recs)} recommandations")
     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
 
 # =========================
@@ -117,7 +130,6 @@ async def ibcf_recommend(req: UserRequest):
         top_n=req.top_n,
         k=req.k
     )
-    print(f"📊 IBCF: user {req.userId} a {len(user_ratings)} films notés, {len(recs)} recommandations")
     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
 
 # =========================
@@ -126,16 +138,13 @@ async def ibcf_recommend(req: UserRequest):
 @app.post("/cb")
 async def cb_recommend(req: FavoritesRequest):
     try:
-        cb_reco = ContentBasedRecommender(csv_path=CSV_PATH)
         movie_ids = cb_reco.recommend_from_titles(
             favorites=req.favorites,
             top_n=req.top_n,
             exclude_seen=req.exclude_seen
         )
-        print(f"📊 CB: favoris {req.favorites}, {len(movie_ids)} recommandations")
         return {"success": True, "recommendations": movie_ids}
     except Exception as e:
-        print("❌ CB error:", e)
         return {"success": False, "error": str(e)}
 
 # =========================
@@ -167,75 +176,41 @@ async def description_clean(
 @app.post("/hybrid")
 async def hybrid_recommend_api(req: HybridRequest):
     df = load_csv()
-    print("\n====================== HYBRIDE DEBUG ======================")
-    print("📩 Requête reçue pour userId:", req.userId)
 
-    # === UBCF ===
-    ubcf_recs = recommender_ubcf_direct(
-        df=df,
-        user_object_id=req.userId,
-        top_n=100,   # 🔥 demander 100 candidats
-        k=req.k
-    )
-    print("📊 UBCF recommandations:", len(ubcf_recs))
-
-    # === IBCF ===
+    ubcf_recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=100, k=req.k)
     ibcf_recs = recommender_ibcf_from_ratings(
         df=df,
         user_ratings=[{"title": r.title, "rating": r.rating} for r in req.userRatings],
-        top_n=100,   # 🔥 demander 100 candidats
+        top_n=100,
         k=req.k
     )
-    print("📊 IBCF recommandations:", len(ibcf_recs))
-
-    # === Content-Based ===
     content_recs = cb_reco.recommend_from_titles(
         favorites=req.favorites,
-        top_n=100,   # 🔥 demander 100 candidats
+        top_n=100,
         exclude_seen=[r.title for r in req.userRatings]
     )
-    print("📊 CB recommandations:", len(content_recs))
 
-    # === Normalisation ===
     ibcf_norm = {film: score / 5.0 for film, score in ibcf_recs}
     ubcf_norm = {film: score / 5.0 for film, score in ubcf_recs}
     content_norm = {film: 1.0 for film in content_recs}
 
-    # === Fusion ===
     alpha = 0.75
     beta = 0.5
     candidate_films = set(ibcf_norm) | set(ubcf_norm) | set(content_norm)
-    print("📌 Nombre total de candidats fusionnés:", len(candidate_films))
 
-    cf_scores = {}
-    for film in candidate_films:
-        s_ibcf = ibcf_norm.get(film, 0.0)
-        s_ubcf = ubcf_norm.get(film, 0.0)
-        cf_scores[film] = beta * s_ubcf + (1.0 - beta) * s_ibcf
+    cf_scores = {film: beta * ubcf_norm.get(film, 0.0) + (1.0 - beta) * ibcf_norm.get(film, 0.0)
+                 for film in candidate_films}
+    hybrid_scores = {film: alpha * content_norm.get(film, 0.0) + (1.0 - alpha) * cf_scores.get(film, 0.0)
+                     for film in candidate_films}
 
-    hybrid_scores = {}
-    for film in candidate_films:
-        s_content = content_norm.get(film, 0.0)
-        s_cf = cf_scores.get(film, 0.0)
-        hybrid_scores[film] = alpha * s_content + (1.0 - alpha) * s_cf
-
-    # === Exclure les films déjà notés par l’utilisateur ===
     seen_titles = {r.title for r in req.userRatings}
     seen_ids = set(df[df["title"].isin(seen_titles)]["movieId"].astype(str).tolist())
 
-    recs = [
-        (film, score)
-        for film, score in hybrid_scores.items()
-        if film not in seen_titles and str(film) not in seen_ids
-    ]
+    recs = [(film, score) for film, score in hybrid_scores.items()
+            if film not in seen_titles and str(film) not in seen_ids]
 
-    # === Tronquer à req.top_n (ex: 20) ===
     recs = sorted(recs, key=lambda x: x[1], reverse=True)[:req.top_n]
-    print("🎯 Hybrid recommandations calculées:", len(recs))
-    print("📌 Premières recommandations:", recs[:5])
-    print("====================== HYBRIDE END ======================\n")
 
-    # 🔥 Enrichir avec CSV pour avoir id + title
     enriched = []
     for film, score in recs:
         row = df[df["movieId"].astype(str) == str(film)].head(1).to_dict(orient="records")
@@ -251,4 +226,3 @@ async def hybrid_recommend_api(req: HybridRequest):
             })
 
     return {"success": True, "recommendations": enriched}
-
