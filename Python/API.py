@@ -4,6 +4,7 @@ from typing import List
 import pandas as pd
 import requests
 import io
+import os
 
 from algo1 import build_description_clean_one
 from ubcf import recommender_ubcf_direct
@@ -57,8 +58,8 @@ class HybridRequest(BaseModel):
 # =========================
 def load_csv():
     try:
-        backend_url = "https://recommandit.onrender.com/api/csv/movies"  # ⚠️ route backend locale
-        response = requests.get(backend_url)
+        backend_url = "https://recommandit.onrender.com/api/csv/movies"  # ⚠️ URL backend déployé
+        response = requests.get(backend_url, timeout=10)
         response.raise_for_status()
 
         df = pd.read_csv(
@@ -87,7 +88,12 @@ def load_csv():
 
 # Charger le CSV une fois et sauvegarder temporairement pour ContentBasedRecommender
 df_init = load_csv()
-df_init.to_csv("movies_temp.csv", index=False)
+if not df_init.empty:
+    df_init.to_csv("movies_temp.csv", index=False)
+else:
+    # Fichier de secours si backend inaccessible
+    if not os.path.exists("movies_temp.csv"):
+        pd.DataFrame(columns=["movieId", "title", "genres", "year", "description"]).to_csv("movies_temp.csv", index=False)
 
 # =========================
 # Content-Based Recommender
@@ -100,7 +106,7 @@ cb_reco = ContentBasedRecommender(csv_path="movies_temp.csv")
 @app.post("/ubcf")
 async def ubcf_recommend(req: UserRequest):
     df = load_csv()
-    if "userId" not in df.columns:
+    if df.empty or "userId" not in df.columns:
         return {"recommendations": []}
 
     recs = recommender_ubcf_direct(
@@ -117,7 +123,7 @@ async def ubcf_recommend(req: UserRequest):
 @app.post("/ibcf")
 async def ibcf_recommend(req: UserRequest):
     df = load_csv()
-    if "userId" not in df.columns:
+    if df.empty or "userId" not in df.columns:
         return {"recommendations": []}
 
     df["userId"] = df["userId"].astype(str)
@@ -176,6 +182,8 @@ async def description_clean(
 @app.post("/hybrid")
 async def hybrid_recommend_api(req: HybridRequest):
     df = load_csv()
+    if df.empty:
+        return {"success": False, "recommendations": [], "error": "CSV vide ou inaccessible"}
 
     ubcf_recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=100, k=req.k)
     ibcf_recs = recommender_ibcf_from_ratings(
