@@ -1,17 +1,17 @@
-# ibcf.py
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
+from scipy.sparse import csr_matrix
 
 def recommender_ibcf_from_ratings(df, user_ratings, top_n=10, k=5):
     """
     IBCF – Item-Based Collaborative Filtering basé sur les notes réelles de l'utilisateur.
-    
+
     Paramètres :
     - df : DataFrame contenant au minimum les colonnes [userId, title, rating]
     - user_ratings : liste de dicts [{"title": str, "rating": float}]
     - top_n : nombre de recommandations à retourner
     - k : nombre de voisins les plus proches à considérer
-    
+
     Retour :
     - liste de tuples (title, score)
     """
@@ -26,15 +26,28 @@ def recommender_ibcf_from_ratings(df, user_ratings, top_n=10, k=5):
         values="rating",
         fill_value=0
     )
+
     if ratings_matrix.empty:
         return []
 
-    # Similarité entre items
-    item_sim = cosine_similarity(ratings_matrix)
-    item_sim_df = pd.DataFrame(item_sim, index=ratings_matrix.index, columns=ratings_matrix.index)
+    # Convertir en float32 pour réduire la mémoire
+    ratings_matrix = ratings_matrix.astype("float32")
+
+    # Transformer en matrice creuse
+    sparse_matrix = csr_matrix(ratings_matrix.values)
+
+    # Similarité entre items (matrice creuse, dense_output=False évite de créer une énorme matrice dense)
+    item_sim_sparse = cosine_similarity(sparse_matrix, dense_output=False)
+
+    # Convertir en DataFrame pour garder la logique existante
+    item_sim_df = pd.DataFrame(
+        item_sim_sparse.toarray(),  # ⚠️ si tu veux rester en sparse, tu peux éviter toarray()
+        index=ratings_matrix.index,
+        columns=ratings_matrix.index
+    )
 
     # Construire le vecteur utilisateur (title -> rating)
-    user_vector = pd.Series(0.0, index=ratings_matrix.index)
+    user_vector = pd.Series(0.0, index=ratings_matrix.index, dtype="float32")
     for entry in user_ratings:
         t = entry.get("title")
         r = entry.get("rating")
