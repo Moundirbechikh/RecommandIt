@@ -81,7 +81,7 @@ router.post("/", async (req, res) => {
     const excludeSeen = Array.from(excludeSeenSet);
 
     // 5) Appeler FastAPI /cb
-    const response = await fetch("http://localhost:8000/cb", {
+    const response = await fetch("https://recommandit-1.onrender.com/cb", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
