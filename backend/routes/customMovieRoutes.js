@@ -36,7 +36,7 @@ function normalizeGenre(name) {
 // ✅ Fonction pour appeler ton service Python et générer description_clean
 async function getDescriptionClean({ title, genres, year, actors, description }) {
   try {
-    const response = await fetch("http://localhost:8000/description_clean", {
+    const response = await fetch("https://recommandit-1.onrender.com/description_clean", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, genres, year, actors, description }),
