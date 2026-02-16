@@ -5,7 +5,7 @@ const MovieModel = require("../models/Movie");
 
 async function syncMovies() {
   try {
-    const pastPath = path.join(__dirname, "../movies_past.csv");
+    const pastPath = path.join(__dirname, "../movies_enriched.csv");
     const enrichedPath = path.join(__dirname, "../movies_enriched_new.csv");
 
     if (fs.existsSync(pastPath)) {
