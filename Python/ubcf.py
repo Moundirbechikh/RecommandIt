@@ -1,10 +1,10 @@
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
+from scipy.sparse import csr_matrix
 
 def recommender_ubcf_direct(df, user_object_id, top_n=10, k=20):
     """
-    UBCF – User-Based Collaborative Filtering
-    Cherche directement par userId (string ou int).
+    UBCF – User-Based Collaborative Filtering optimisé
     """
 
     if df.empty:
@@ -26,16 +26,24 @@ def recommender_ubcf_direct(df, user_object_id, top_n=10, k=20):
         print(f"❌ UBCF: userId {user_object_id} introuvable dans le CSV")
         return []
 
-    # Récupérer les notes de l'utilisateur
-    user_ratings = ratings_matrix.loc[user_object_id]
+    # Convertir en float32 pour réduire la mémoire
+    ratings_matrix = ratings_matrix.astype("float32")
 
-    # Similarité utilisateur-utilisateur
-    user_sim = cosine_similarity(ratings_matrix)
+    # Transformer en matrice creuse
+    sparse_matrix = csr_matrix(ratings_matrix.values)
+
+    # Similarité utilisateur-utilisateur (matrice creuse)
+    user_sim_sparse = cosine_similarity(sparse_matrix, dense_output=False)
+
+    # Convertir en DataFrame
     user_sim_df = pd.DataFrame(
-        user_sim,
+        user_sim_sparse.toarray(),  # ⚠️ tu peux éviter toarray() si tu veux rester en sparse
         index=ratings_matrix.index,
         columns=ratings_matrix.index
     )
+
+    # Récupérer les notes de l'utilisateur
+    user_ratings = ratings_matrix.loc[user_object_id]
 
     # k voisins les plus proches
     neighbors = (
