@@ -57,7 +57,7 @@ class HybridRequest(BaseModel):
 # =========================
 def load_csv():
     try:
-        backend_url = "http://localhost:5000/api/csv/movies"  # ⚠️ route backend locale
+        backend_url = "https://recommandit.onrender.com/api/csv/movies"  # ⚠️ route backend locale
         response = requests.get(backend_url)
         response.raise_for_status()
 
