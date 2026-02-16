@@ -13,8 +13,8 @@ function AddMovieGlass() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await fetch("https://recommandit.onrender.com/api/movies/count", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+        const res = await fetch("http://localhost:5000/api/movies/count", {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         const data = await res.json();
         setCount(data.count);
@@ -39,7 +39,7 @@ function AddMovieGlass() {
       return;
     }
     try {
-      const res = await fetch(`https://recommandit.onrender.com/api/tmdb/search?q=${q}`);
+      const res = await fetch(`http://localhost:5000/api/tmdb/search?q=${q}`);
       const data = await res.json();
       if (data.results) {
         setSuggestions(data.results.slice(0, 5));
@@ -51,7 +51,7 @@ function AddMovieGlass() {
 
   const selectMovie = async (movie) => {
     try {
-      const res = await fetch(`https://recommandit.onrender.com/api/tmdb/details/${movie.id}`);
+      const res = await fetch(`http://localhost:5000/api/tmdb/details/${movie.id}`);
       const data = await res.json();
       const actors = data.actors || [];
       setSelectedMovie({ ...data, actors });
@@ -75,19 +75,21 @@ function AddMovieGlass() {
       [];
 
     const payload = {
-      title: selectedMovie.title,
-      year: selectedMovie.release_date?.slice(0, 4),
-      description: selectedMovie.overview,
+      title: selectedMovie.title || "",
+      year: selectedMovie.release_date?.slice(0, 4) || "",
+      description: selectedMovie.overview || "",
       backdrop: selectedMovie.backdrop_path
         ? `https://image.tmdb.org/t/p/w780${selectedMovie.backdrop_path}`
-        : null,
+        : "",
       rating: parseFloat(rating),
       genres,
       actors: selectedMovie.actors || [],
     };
 
+    console.log("📤 Payload envoyé:", payload);
+
     try {
-      const res = await fetch("https://recommandit.onrender.com/api/movies/custom", {
+      const res = await fetch("http://localhost:5000/api/movies/custom", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -96,11 +98,12 @@ function AddMovieGlass() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
+      console.log("📥 Réponse backend:", data);
 
       if (data.success) {
         setMessage("✅ Film ajouté avec succès !");
         setCount(count + 1);
-        setShowForm(false); // retour au bouton
+        setShowForm(false);
         setQuery("");
         setSelectedMovie(null);
         setRating("");
@@ -145,7 +148,7 @@ function AddMovieGlass() {
         onSubmit={handleSubmit}
         className="backdrop-blur-lg bg-white/30 border border-white/40 rounded-2xl shadow-xl p-8 w-full max-w-lg flex flex-col gap-6 relative"
       >
-        {/* ✅ Bouton X rouge pour fermer */}
+        {/* Bouton X rouge pour fermer */}
         <button
           type="button"
           onClick={() => setShowForm(false)}
@@ -191,16 +194,15 @@ function AddMovieGlass() {
 
         {/* Champ note */}
         <select
-  value={rating}
-  onChange={(e) => setRating(e.target.value)}
-  className="p-3 rounded-xl border border-gray-300 bg-white/60 focus:outline-none focus:ring-2 focus:ring-black text-black  font-cursive"
->
-  <option value="">Choisir une note</option>
-  {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((val) => (
-    <option key={val} value={val}>{val}</option>
-  ))}
-</select>
-
+          value={rating}
+          onChange={(e) => setRating(e.target.value)}
+          className="p-3 rounded-xl border border-gray-300 bg-white/60 focus:outline-none focus:ring-2 focus:ring-black text-black font-cursive"
+        >
+          <option value="">Choisir une note</option>
+          {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map((val) => (
+            <option key={val} value={val}>{val}</option>
+          ))}
+        </select>
 
         {message && (
           <p className="text-center font-semibold text-black">{message}</p>
@@ -218,5 +220,3 @@ function AddMovieGlass() {
 }
 
 export default AddMovieGlass;
-//je veut savoir ou je doit modifier pour que la note peut etre 1 et 1.5 pas juste des entiers je veut aussi les 0.5
-// peut tu me le designer 
