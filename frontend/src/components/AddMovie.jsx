@@ -13,7 +13,7 @@ function AddMovieGlass() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/movies/count", {
+        const res = await fetch("https://recommandit.onrender.com/api/movies/count", {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         });
         const data = await res.json();
@@ -39,7 +39,7 @@ function AddMovieGlass() {
       return;
     }
     try {
-      const res = await fetch(`http://localhost:5000/api/tmdb/search?q=${q}`);
+      const res = await fetch(`https://recommandit.onrender.com/api/tmdb/search?q=${q}`);
       const data = await res.json();
       if (data.results) {
         setSuggestions(data.results.slice(0, 5));
@@ -51,7 +51,7 @@ function AddMovieGlass() {
 
   const selectMovie = async (movie) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/tmdb/details/${movie.id}`);
+      const res = await fetch(`https://recommandit.onrender.com/api/tmdb/details/${movie.id}`);
       const data = await res.json();
       const actors = data.actors || [];
       setSelectedMovie({ ...data, actors });
@@ -89,7 +89,7 @@ function AddMovieGlass() {
     console.log("📤 Payload envoyé:", payload);
 
     try {
-      const res = await fetch("http://localhost:5000/api/movies/custom", {
+      const res = await fetch("https://recommandit.onrender.com/api/movies/custom", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
