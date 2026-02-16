@@ -6,4 +6,5 @@ scikit-learn
 nltk
 pydantic
 spacy
+fr-core-news-sm
 numpy
