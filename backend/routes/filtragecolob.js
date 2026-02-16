@@ -128,7 +128,7 @@ router.post("/ubcf", async (req, res) => {
 
     const { top_n = 20, k = 20 } = req.body;
 
-    const response = await fetch("http://localhost:8000/ubcf", {
+    const response = await fetch("https://recommandit-1.onrender.com/ubcf", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, top_n, k }),
@@ -167,7 +167,7 @@ router.post("/ibcf", async (req, res) => {
 
     const { top_n = 20, k = 20 } = req.body;
 
-    const response = await fetch("http://localhost:8000/ibcf", {
+    const response = await fetch("https://recommandit-1.onrender.com/ibcf", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId, top_n, k }),
