@@ -188,8 +188,15 @@ mongoose
           userRatings: []
         })
       })
-        .then(res => res.json())
-        .then(data => console.log("🚀 Signal envoyé à FastAPI, réponse:", data))
+        .then(async res => {
+          const text = await res.text();
+          try {
+            const data = JSON.parse(text);
+            console.log("🚀 Signal envoyé à FastAPI, réponse:", data);
+          } catch {
+            console.error("⚠️ FastAPI a renvoyé du HTML au lieu de JSON:", text.slice(0, 100));
+          }
+        })
         .catch(err => console.error("⚠️ Impossible de contacter FastAPI:", err));
 
       // 🔄 Keep-alive toutes les 5 minutes
@@ -205,7 +212,15 @@ mongoose
             userRatings: []
           })
         })
-          .then(() => console.log("🔄 Ping envoyé à FastAPI"))
+          .then(async res => {
+            const text = await res.text();
+            try {
+              JSON.parse(text);
+              console.log("🔄 Ping envoyé à FastAPI");
+            } catch {
+              console.error("⚠️ FastAPI a renvoyé du HTML au lieu de JSON:", text.slice(0, 100));
+            }
+          })
           .catch(err => console.error("⚠️ Erreur ping FastAPI:", err));
       }, 5 * 60 * 1000);
     });
