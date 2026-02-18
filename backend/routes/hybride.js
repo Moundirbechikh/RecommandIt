@@ -115,7 +115,7 @@ router.post("/", async (req, res) => {
     console.log("📡 Appel FastAPI /hybrid avec paramètres:", params);
 
     // 4️⃣ Appeler FastAPI /hybrid
-    const response = await fetch("http://localhost:8000/hybrid", {
+    const response = await fetch("https://recommandit-1.onrender.com/hybrid", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
