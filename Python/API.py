@@ -135,8 +135,12 @@ async def ibcf_recommend(req: UserRequest):
 @app.post("/cb")
 async def cb_recommend(req: FavoritesRequest):
     try:
-        movie_ids = cb_reco.recommend_from_titles(favorites=req.favorites, top_n=req.top_n, exclude_seen=req.exclude_seen)
-        return {"success": True, "recommendations": movie_ids}
+        recommendations = cb_reco.recommend_with_details(
+            favorites=req.favorites,
+            top_n=req.top_n,
+            exclude_seen=req.exclude_seen
+        )
+        return {"success": True, "recommendations": recommendations}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
