@@ -5,10 +5,11 @@ const path = require("path");
 const csv = require("csv-parser");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const fetch = require("node-fetch"); // pour ping FastAPI
 
 // Import des routes
-const authRoutes = require("./routes/auth"); // routes d’authentification
-const favoriteRoutes = require("./routes/favoriteRoutes"); // routes favoris
+const authRoutes = require("./routes/auth"); 
+const favoriteRoutes = require("./routes/favoriteRoutes"); 
 const rateRoutes = require("./routes/rateRoutes");
 // const contentBasedRoutes = require("./routes/contentBasedRoutes"); // ❌ désactivé
 const latestRoutes = require("./routes/latest");
@@ -27,7 +28,7 @@ const PORT = process.env.PORT || 5000;
 // Middlewares globaux
 // =======================
 app.use(cors());
-app.use(express.json()); // pour lire le JSON dans les requêtes
+app.use(express.json());
 
 // =======================
 // Endpoint pour récupérer les films uniques depuis CSV
@@ -44,12 +45,10 @@ app.get("/api/movies", (req, res) => {
     .pipe(csv())
     .on("data", (data) => {
       const movieId = data.movieId;
-
       let genres = [];
       if (data.genres && typeof data.genres === "string") {
         genres = data.genres.split("|");
       }
-
       if (!moviesMap.has(movieId)) {
         moviesMap.set(movieId, {
           movieId: data.movieId,
@@ -63,8 +62,7 @@ app.get("/api/movies", (req, res) => {
       }
     })
     .on("end", () => {
-      const uniqueMovies = Array.from(moviesMap.values());
-      res.json(uniqueMovies);
+      res.json(Array.from(moviesMap.values()));
     })
     .on("error", (err) => {
       console.error("Erreur lecture CSV:", err);
@@ -100,7 +98,6 @@ app.get("/api/movies/latest", (req, res) => {
     .pipe(csv())
     .on("data", (data) => {
       const movieId = data.movieId;
-
       if (!moviesMap.has(movieId)) {
         moviesMap.set(movieId, {
           movieId: data.movieId,
@@ -114,10 +111,8 @@ app.get("/api/movies/latest", (req, res) => {
           _ratings: []
         });
       }
-
       const movie = moviesMap.get(movieId);
       movie.ratingsCount += 1;
-
       if (data.rating && !isNaN(data.rating)) {
         movie._ratings.push(parseFloat(data.rating));
       }
@@ -132,22 +127,16 @@ app.get("/api/movies/latest", (req, res) => {
         delete m._ratings;
         return m;
       });
-
       const sorted = movies.sort((a, b) => {
         const dateA = new Date(a.release_date || a.year);
         const dateB = new Date(b.release_date || b.year);
-
-        if (dateB - dateA !== 0) {
-          return dateB - dateA;
-        }
+        if (dateB - dateA !== 0) return dateB - dateA;
         return b._avgRating - a._avgRating;
       });
-
       const finalMovies = sorted.slice(0, 12).map((m) => {
         delete m._avgRating;
         return { ...m, rating: null };
       });
-
       res.json(finalMovies);
     })
     .on("error", (err) => {
@@ -185,7 +174,40 @@ mongoose
     }
 
     app.listen(PORT, () => {
-      console.log(`✅ Backend démarré sur http://localhost:${PORT}`);
+      console.log(`✅ Backend Node démarré sur http://localhost:${PORT}`);
+
+      // 🚀 Ping automatique vers FastAPI pour le réveiller
+      fetch("https://recommandit-1.onrender.com/hybrid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: "warmup",
+          top_n: 1,
+          k: 1,
+          favorites: [],
+          userRatings: []
+        })
+      })
+        .then(res => res.json())
+        .then(data => console.log("🚀 Signal envoyé à FastAPI, réponse:", data))
+        .catch(err => console.error("⚠️ Impossible de contacter FastAPI:", err));
+
+      // 🔄 Keep-alive toutes les 5 minutes
+      setInterval(() => {
+        fetch("https://recommandit-1.onrender.com/hybrid", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: "keepalive",
+            top_n: 1,
+            k: 1,
+            favorites: [],
+            userRatings: []
+          })
+        })
+          .then(() => console.log("🔄 Ping envoyé à FastAPI"))
+          .catch(err => console.error("⚠️ Erreur ping FastAPI:", err));
+      }, 5 * 60 * 1000);
     });
   })
   .catch((err) => {
