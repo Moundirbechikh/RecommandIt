@@ -176,53 +176,53 @@ mongoose
     app.listen(PORT, () => {
       console.log(`✅ Backend Node démarré sur http://localhost:${PORT}`);
 
-      // 🚀 Ping automatique vers FastAPI pour le réveiller
-      fetch("https://recommandit-1.onrender.com/hybrid", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: "warmup",
-          top_n: 1,
-          k: 1,
-          favorites: [],
-          userRatings: []
-        })
-      })
-        .then(async res => {
-          const text = await res.text();
-          try {
-            const data = JSON.parse(text);
-            console.log("🚀 Signal envoyé à FastAPI, réponse:", data);
-          } catch {
-            console.error("⚠️ FastAPI a renvoyé du HTML au lieu de JSON:", text.slice(0, 100));
-          }
-        })
-        .catch(err => console.error("⚠️ Impossible de contacter FastAPI:", err));
+// 🚀 Ping automatique vers FastAPI pour le réveiller
+fetch("https://recommandit-1.onrender.com/hybrid", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    userId: "warmup",
+    top_n: 1,
+    k: 1,
+    favorites: [],
+    userRatings: []
+  })
+})
+  .then(async res => {
+    const text = await res.text();
+    try {
+      const data = JSON.parse(text);
+      console.log("🚀 Signal envoyé à FastAPI, réponse JSON:", data);
+    } catch {
+      console.error("⚠️ FastAPI a renvoyé du HTML (service endormi ou erreur):", text.slice(0, 100));
+    }
+  })
+  .catch(err => console.error("⚠️ Impossible de contacter FastAPI:", err));
 
-      // 🔄 Keep-alive toutes les 5 minutes
-      setInterval(() => {
-        fetch("https://recommandit-1.onrender.com/hybrid", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: "keepalive",
-            top_n: 1,
-            k: 1,
-            favorites: [],
-            userRatings: []
-          })
-        })
-          .then(async res => {
-            const text = await res.text();
-            try {
-              JSON.parse(text);
-              console.log("🔄 Ping envoyé à FastAPI");
-            } catch {
-              console.error("⚠️ FastAPI a renvoyé du HTML au lieu de JSON:", text.slice(0, 100));
-            }
-          })
-          .catch(err => console.error("⚠️ Erreur ping FastAPI:", err));
-      }, 5 * 60 * 1000);
+// 🔄 Keep-alive toutes les 5 minutes
+setInterval(() => {
+  fetch("https://recommandit-1.onrender.com/hybrid", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      userId: "keepalive",
+      top_n: 1,
+      k: 1,
+      favorites: [],
+      userRatings: []
+    })
+  })
+    .then(async res => {
+      const text = await res.text();
+      try {
+        JSON.parse(text);
+        console.log("🔄 Ping envoyé à FastAPI (réponse JSON)");
+      } catch {
+        console.error("⚠️ FastAPI a renvoyé du HTML (service endormi ou erreur):", text.slice(0, 100));
+      }
+    })
+    .catch(err => console.error("⚠️ Erreur ping FastAPI:", err));
+}, 5 * 60 * 1000);
     });
   })
   .catch((err) => {
