@@ -15,7 +15,7 @@ const latestRoutes = require("./routes/latest");
 const tmdbRoutes = require("./routes/tmdbRoutes");
 const customMovieRoutes = require("./routes/customMovieRoutes");
 // const filtragecolobRoutes = require("./routes/filtragecolob"); // ❌ désactivé
-const hybrideRoutes = require("./routes/hybride"); // ✅ garder Hybride
+const hybrideRoutes = require("./routes/hybride"); // ✅ actif
 
 // Import de la fonction de synchronisation
 const syncMovies = require("./utils/syncMovies");
