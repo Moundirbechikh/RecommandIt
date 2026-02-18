@@ -85,7 +85,6 @@ def load_csv():
             else:
                 df["description_clean"] = "placeholder description"
         else:
-            # Si description_clean est vide, fallback sur description
             if df["description_clean"].isnull().all() or (df["description_clean"].astype(str).str.strip() == "").all():
                 if "description" in df.columns:
                     df["description_clean"] = df["description"].fillna("placeholder description")
@@ -115,47 +114,44 @@ df_init.to_csv("movies_temp.csv", index=False)
 cb_reco = ContentBasedRecommender(csv_path="movies_temp.csv")
 
 # =========================
-# UBCF
+# UBCF (désactivé)
 # =========================
-@app.post("/ubcf")
-async def ubcf_recommend(req: UserRequest):
-    df = load_csv()
-    if df.empty or "userId" not in df.columns:
-        return {"recommendations": []}
-
-    recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=req.top_n, k=req.k)
-    return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
-
-# =========================
-# IBCF
-# =========================
-@app.post("/ibcf")
-async def ibcf_recommend(req: UserRequest):
-    df = load_csv()
-    if df.empty or "userId" not in df.columns:
-        return {"recommendations": []}
-
-    df["userId"] = df["userId"].astype(str)
-    user_ratings_df = df[df["userId"] == str(req.userId)][["title", "rating"]]
-    user_ratings = user_ratings_df.to_dict(orient="records")
-
-    recs = recommender_ibcf_from_ratings(df=df, user_ratings=user_ratings, top_n=req.top_n, k=req.k)
-    return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
+# @app.post("/ubcf")
+# async def ubcf_recommend(req: UserRequest):
+#     df = load_csv()
+#     if df.empty or "userId" not in df.columns:
+#         return {"recommendations": []}
+#     recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=req.top_n, k=req.k)
+#     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
 
 # =========================
-# Content-Based
+# IBCF (désactivé)
 # =========================
-@app.post("/cb")
-async def cb_recommend(req: FavoritesRequest):
-    try:
-        recommendations = cb_reco.recommend_with_details(
-            favorites=req.favorites,
-            top_n=req.top_n,
-            exclude_seen=req.exclude_seen
-        )
-        return {"success": True, "recommendations": recommendations}
-    except Exception as e:
-        return {"success": False, "error": str(e)}
+# @app.post("/ibcf")
+# async def ibcf_recommend(req: UserRequest):
+#     df = load_csv()
+#     if df.empty or "userId" not in df.columns:
+#         return {"recommendations": []}
+#     df["userId"] = df["userId"].astype(str)
+#     user_ratings_df = df[df["userId"] == str(req.userId)][["title", "rating"]]
+#     user_ratings = user_ratings_df.to_dict(orient="records")
+#     recs = recommender_ibcf_from_ratings(df=df, user_ratings=user_ratings, top_n=req.top_n, k=req.k)
+#     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
+
+# =========================
+# Content-Based (désactivé)
+# =========================
+# @app.post("/cb")
+# async def cb_recommend(req: FavoritesRequest):
+#     try:
+#         recommendations = cb_reco.recommend_with_details(
+#             favorites=req.favorites,
+#             top_n=req.top_n,
+#             exclude_seen=req.exclude_seen
+#         )
+#         return {"success": True, "recommendations": recommendations}
+#     except Exception as e:
+#         return {"success": False, "error": str(e)}
 
 # =========================
 # DESCRIPTION CLEAN
@@ -169,7 +165,7 @@ async def description_clean(title: str = Body(...), genres: List[str] = Body(...
         return {"success": False, "error": str(e)}
 
 # =========================
-# HYBRID
+# HYBRID (seul endpoint actif)
 # =========================
 @app.post("/hybrid")
 async def hybrid_recommend_api(req: HybridRequest):
