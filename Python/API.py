@@ -6,18 +6,6 @@ import requests
 import io
 import os
 
-# Profilage mémoire
-import tracemalloc
-import psutil
-
-tracemalloc.start()
-
-def log_memory(step: str):
-    current, peak = tracemalloc.get_traced_memory()
-    process = psutil.Process(os.getpid())
-    rss = process.memory_info().rss / 1024**2
-    print(f"[MEMORY] {step} → RAM utilisée: {current/10**6:.2f} MB, pic: {peak/10**6:.2f} MB, RSS: {rss:.2f} MB")
-
 from algo1 import build_description_clean_one
 from ubcf import recommender_ubcf_direct
 from ibcf import recommender_ibcf_from_ratings
@@ -93,7 +81,6 @@ def load_csv():
         if "description_clean" not in df.columns:
             df["description_clean"] = ""
 
-        log_memory("Après chargement CSV")
         return df
 
     except Exception as e:
@@ -109,13 +96,10 @@ else:
     if not os.path.exists("movies_temp.csv"):
         pd.DataFrame(columns=["movieId", "title", "genres", "year", "description", "description_clean"]).to_csv("movies_temp.csv", index=False)
 
-log_memory("Après sauvegarde CSV initial")
-
 # =========================
 # Content-Based Recommender
 # =========================
 cb_reco = ContentBasedRecommender(csv_path="movies_temp.csv")
-log_memory("Après initialisation ContentBasedRecommender")
 
 # =========================
 # UBCF
@@ -127,7 +111,6 @@ async def ubcf_recommend(req: UserRequest):
         return {"recommendations": []}
 
     recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=req.top_n, k=req.k)
-    log_memory("Après UBCF")
     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
 
 # =========================
@@ -144,7 +127,6 @@ async def ibcf_recommend(req: UserRequest):
     user_ratings = user_ratings_df.to_dict(orient="records")
 
     recs = recommender_ibcf_from_ratings(df=df, user_ratings=user_ratings, top_n=req.top_n, k=req.k)
-    log_memory("Après IBCF")
     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
 
 # =========================
@@ -154,7 +136,6 @@ async def ibcf_recommend(req: UserRequest):
 async def cb_recommend(req: FavoritesRequest):
     try:
         movie_ids = cb_reco.recommend_from_titles(favorites=req.favorites, top_n=req.top_n, exclude_seen=req.exclude_seen)
-        log_memory("Après CB")
         return {"success": True, "recommendations": movie_ids}
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -166,7 +147,6 @@ async def cb_recommend(req: FavoritesRequest):
 async def description_clean(title: str = Body(...), genres: List[str] = Body(...), year: str = Body(...), actors: List[str] = Body(...), description: str = Body(...)):
     try:
         desc_clean = build_description_clean_one(title=title, genres=genres, year=year, actors=actors, description=description)
-        log_memory("Après description_clean")
         return {"success": True, "description_clean": desc_clean}
     except Exception as e:
         return {"success": False, "error": str(e)}
@@ -183,8 +163,6 @@ async def hybrid_recommend_api(req: HybridRequest):
     ubcf_recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=100, k=req.k)
     ibcf_recs = recommender_ibcf_from_ratings(df=df, user_ratings=[{"title": r.title, "rating": r.rating} for r in req.userRatings], top_n=100, k=req.k)
     content_recs = cb_reco.recommend_from_titles(favorites=req.favorites, top_n=100, exclude_seen=[r.title for r in req.userRatings])
-
-    log_memory("Après hybrid")
 
     ibcf_norm = {film: score / 5.0 for film, score in ibcf_recs}
     ubcf_norm = {film: score / 5.0 for film, score in ubcf_recs}
