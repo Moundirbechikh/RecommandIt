@@ -160,7 +160,7 @@ app.get("/api/movies/latest", (req, res) => {
 // Nouvelle route pour exposer movies_enriched_new.csv
 // =======================
 app.get("/api/csv/movies", (req, res) => {
-  const filePath = path.join(__dirname, "movies_enriched_new.csv");
+  const filePath = path.join(__dirname, "movies_enriched.csv");
   if (!fs.existsSync(filePath)) {
     return res.status(404).send("CSV introuvable");
   }
