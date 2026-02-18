@@ -42,28 +42,14 @@ function enrichRecommendations(recommendations) {
     .map((rec) => {
       let movieInfo = null;
 
-      // Cas 1 : FastAPI renvoie déjà un objet complet
-      if (rec.movieId && rec.title) {
-        return rec;
-      }
-
-      // Cas 2 : FastAPI renvoie {title, score}
-      if (rec.title) {
-        movieInfo = moviesMap.get(rec.title);
-      }
-
-      // Cas 3 : FastAPI renvoie {movieId, score}
-      if (!movieInfo && rec.movieId) {
-        movieInfo = moviesMap.get(String(rec.movieId));
-      }
-
-      // Cas 4 : FastAPI renvoie un tuple [id, score]
+      if (rec.movieId && rec.title) return rec; // objet complet
+      if (rec.title) movieInfo = moviesMap.get(rec.title);
+      if (!movieInfo && rec.movieId) movieInfo = moviesMap.get(String(rec.movieId));
       if (!movieInfo && Array.isArray(rec) && rec.length === 2) {
         const [film, score] = rec;
         movieInfo = moviesMap.get(String(film)) || moviesMap.get(film);
         return movieInfo ? { ...movieInfo, score } : null;
       }
-
       return movieInfo ? { ...movieInfo, score: rec.score } : null;
     })
     .filter(Boolean);
@@ -75,16 +61,14 @@ function enrichRecommendations(recommendations) {
 router.post("/", async (req, res) => {
   try {
     const userObjectId = req.user.sub;
-    console.log(
-      "\n====================== HYBRIDE DEBUG ======================"
-    );
+    console.log("\n====================== HYBRIDE DEBUG ======================");
     console.log("📩 Requête reçue pour userId:", userObjectId);
 
     if (!userObjectId) {
       return res.status(401).json({ error: "Utilisateur non authentifié" });
     }
 
-    // 1️⃣ Récupérer les favoris depuis MongoDB et convertir en titres
+    // 1️⃣ Favoris
     const favoritesDocs = await Favorite.find({ userId: userObjectId }).lean();
     const favoriteTitles = favoritesDocs
       .map((f) => {
@@ -93,18 +77,16 @@ router.post("/", async (req, res) => {
       })
       .filter(Boolean);
 
-    // 2️⃣ Récupérer les notes depuis MongoDB et convertir en titres
+    // 2️⃣ Notes
     const rateDoc = await Rate.findOne({ userId: userObjectId }).lean();
     const userRatings = (rateDoc?.ratings || [])
       .map((r) => {
         const movie = moviesMap.get(String(r.filmId));
-        return movie
-          ? { title: movie.title, rating: r.note || r.rating }
-          : null;
+        return movie ? { title: movie.title, rating: r.note || r.rating } : null;
       })
       .filter(Boolean);
 
-    // 3️⃣ Construire le payload pour FastAPI
+    // 3️⃣ Payload
     const params = {
       userId: userObjectId,
       top_n: req.body.top_n || 100,
@@ -114,34 +96,34 @@ router.post("/", async (req, res) => {
     };
     console.log("📡 Appel FastAPI /hybrid avec paramètres:", params);
 
-    // 4️⃣ Appeler FastAPI /hybrid
+    // 4️⃣ Appel FastAPI
     const response = await fetch("https://recommandit-1.onrender.com/hybrid", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
     });
 
-    if (!response.ok) {
-      const text = await response.text();
-      console.error("❌ FastAPI error:", text);
-      return res.status(500).json({ error: "Erreur FastAPI", details: text });
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error("⚠️ FastAPI a renvoyé du HTML (service endormi ou erreur):", text.slice(0, 100));
+      return res.status(502).json({ error: "FastAPI indisponible", details: text.slice(0, 200) });
     }
 
-    const data = await response.json();
     const recs = data.recommendations || [];
     console.log("🎯 Nombre de recommandations hybrides reçues:", recs.length);
     console.log("📌 Premières recommandations:", recs.slice(0, 3));
 
-    // 5️⃣ Enrichir les résultats si besoin
+    // 5️⃣ Enrichir
     const enriched = enrichRecommendations(recs);
 
     res.json({ success: true, recommendations: enriched });
     console.log("====================== HYBRIDE END ======================\n");
   } catch (err) {
     console.error("❌ Erreur route hybride:", err);
-    res
-      .status(500)
-      .json({ error: "Erreur serveur Hybride", details: err.message });
+    res.status(500).json({ error: "Erreur serveur Hybride", details: err.message });
   }
 });
 
