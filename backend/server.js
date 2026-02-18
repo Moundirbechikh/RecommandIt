@@ -5,10 +5,11 @@ const path = require("path");
 const csv = require("csv-parser");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const { spawn } = require("child_process"); // <-- ajout
 
 // Import des routes
-const authRoutes = require("./routes/auth"); // routes d’authentification
-const favoriteRoutes = require("./routes/favoriteRoutes"); // routes favoris
+const authRoutes = require("./routes/auth"); 
+const favoriteRoutes = require("./routes/favoriteRoutes"); 
 const rateRoutes = require("./routes/rateRoutes");
 const contentBasedRoutes = require("./routes/contentBasedRoutes");
 const latestRoutes = require("./routes/latest");
@@ -24,10 +25,27 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // =======================
+// Lancer Python (FastAPI) en parallèle
+// =======================
+const pythonProcess = spawn("uvicorn", ["Python.API:app", "--host", "0.0.0.0", "--port", "8000"]);
+
+pythonProcess.stdout.on("data", (data) => {
+  console.log(`Python: ${data}`);
+});
+
+pythonProcess.stderr.on("data", (data) => {
+  console.error(`Python error: ${data}`);
+});
+
+pythonProcess.on("close", (code) => {
+  console.log(`Python process exited with code ${code}`);
+});
+
+// =======================
 // Middlewares globaux
 // =======================
 app.use(cors());
-app.use(express.json()); // pour lire le JSON dans les requêtes
+app.use(express.json());
 
 // =======================
 // Endpoint pour récupérer les films uniques depuis CSV
@@ -44,12 +62,10 @@ app.get("/api/movies", (req, res) => {
     .pipe(csv())
     .on("data", (data) => {
       const movieId = data.movieId;
-
       let genres = [];
       if (data.genres && typeof data.genres === "string") {
         genres = data.genres.split("|");
       }
-
       if (!moviesMap.has(movieId)) {
         moviesMap.set(movieId, {
           movieId: data.movieId,
@@ -63,8 +79,7 @@ app.get("/api/movies", (req, res) => {
       }
     })
     .on("end", () => {
-      const uniqueMovies = Array.from(moviesMap.values());
-      res.json(uniqueMovies);
+      res.json(Array.from(moviesMap.values()));
     })
     .on("error", (err) => {
       console.error("Erreur lecture CSV:", err);
@@ -100,7 +115,6 @@ app.get("/api/movies/latest", (req, res) => {
     .pipe(csv())
     .on("data", (data) => {
       const movieId = data.movieId;
-
       if (!moviesMap.has(movieId)) {
         moviesMap.set(movieId, {
           movieId: data.movieId,
@@ -114,10 +128,8 @@ app.get("/api/movies/latest", (req, res) => {
           _ratings: []
         });
       }
-
       const movie = moviesMap.get(movieId);
       movie.ratingsCount += 1;
-
       if (data.rating && !isNaN(data.rating)) {
         movie._ratings.push(parseFloat(data.rating));
       }
@@ -132,22 +144,16 @@ app.get("/api/movies/latest", (req, res) => {
         delete m._ratings;
         return m;
       });
-
       const sorted = movies.sort((a, b) => {
         const dateA = new Date(a.release_date || a.year);
         const dateB = new Date(b.release_date || b.year);
-
-        if (dateB - dateA !== 0) {
-          return dateB - dateA;
-        }
+        if (dateB - dateA !== 0) return dateB - dateA;
         return b._avgRating - a._avgRating;
       });
-
       const finalMovies = sorted.slice(0, 12).map((m) => {
         delete m._avgRating;
         return { ...m, rating: null };
       });
-
       res.json(finalMovies);
     })
     .on("error", (err) => {
@@ -157,7 +163,7 @@ app.get("/api/movies/latest", (req, res) => {
 });
 
 // =======================
-// Nouvelle route pour exposer movies_enriched_new.csv
+// Nouvelle route pour exposer movies_enriched.csv
 // =======================
 app.get("/api/csv/movies", (req, res) => {
   const filePath = path.join(__dirname, "movies_enriched.csv");
@@ -176,16 +182,14 @@ mongoose
   .connect(process.env.MONGO_URI, { dbName: "RecommendIT" })
   .then(async () => {
     console.log("✅ Connecté à MongoDB Atlas");
-
     try {
       await syncMovies();
       console.log("🎬 Synchronisation des films terminée au démarrage");
     } catch (err) {
       console.error("⚠️ Erreur lors de la synchronisation:", err);
     }
-
     app.listen(PORT, () => {
-      console.log(`✅ Backend démarré sur http://localhost:${PORT}`);
+      console.log(`✅ Backend Node démarré sur http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
