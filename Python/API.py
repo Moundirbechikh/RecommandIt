@@ -78,23 +78,36 @@ def load_csv():
         if "userId" in df.columns:
             df["userId"] = df["userId"].astype(str)
 
+        # Fallback pour description_clean
         if "description_clean" not in df.columns:
-            df["description_clean"] = ""
+            if "description" in df.columns:
+                df["description_clean"] = df["description"].fillna("placeholder description")
+            else:
+                df["description_clean"] = "placeholder description"
+        else:
+            # Si description_clean est vide, fallback sur description
+            if df["description_clean"].isnull().all() or (df["description_clean"].astype(str).str.strip() == "").all():
+                if "description" in df.columns:
+                    df["description_clean"] = df["description"].fillna("placeholder description")
+                else:
+                    df["description_clean"] = "placeholder description"
 
         return df
 
     except Exception as e:
         print("❌ Erreur lors du chargement du CSV depuis backend:", e)
-        return pd.DataFrame(columns=["movieId", "title", "genres", "year", "description", "description_clean"])
+        return pd.DataFrame([{
+            "movieId": "0",
+            "title": "placeholder",
+            "genres": "",
+            "year": "",
+            "description": "placeholder description",
+            "description_clean": "placeholder description"
+        }])
 
 # Charger le CSV une fois et sauvegarder temporairement pour ContentBasedRecommender
 df_init = load_csv()
-if not df_init.empty:
-    df_init.to_csv("movies_temp.csv", index=False)
-else:
-    # Fichier de secours si backend inaccessible
-    if not os.path.exists("movies_temp.csv"):
-        pd.DataFrame(columns=["movieId", "title", "genres", "year", "description", "description_clean"]).to_csv("movies_temp.csv", index=False)
+df_init.to_csv("movies_temp.csv", index=False)
 
 # =========================
 # Content-Based Recommender
