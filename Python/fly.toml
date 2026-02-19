@@ -1,4 +1,4 @@
-app = "fastapi-service"   # Nom de ton app Fly.io
+app = "fastapi-service-recommendit"   # Nom de ton app Fly.io
 
 [build]
   builder = "python"
