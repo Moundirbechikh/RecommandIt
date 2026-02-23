@@ -5,18 +5,16 @@ const path = require("path");
 const csv = require("csv-parser");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const fetch = require("node-fetch"); // pour ping FastAPI
+const fetch = require("node-fetch"); 
 
 // Import des routes
 const authRoutes = require("./routes/auth"); 
 const favoriteRoutes = require("./routes/favoriteRoutes"); 
 const rateRoutes = require("./routes/rateRoutes");
-// const contentBasedRoutes = require("./routes/contentBasedRoutes"); // ❌ désactivé
 const latestRoutes = require("./routes/latest");
 const tmdbRoutes = require("./routes/tmdbRoutes");
 const customMovieRoutes = require("./routes/customMovieRoutes");
-// const filtragecolobRoutes = require("./routes/filtragecolob"); // ❌ désactivé
-const hybrideRoutes = require("./routes/hybride"); // ✅ actif
+const hybrideRoutes = require("./routes/hybride"); 
 
 // Import de la fonction de synchronisation
 const syncMovies = require("./utils/syncMovies");
@@ -76,12 +74,10 @@ app.get("/api/movies", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/user/favorites", favoriteRoutes);
 app.use("/api/rates", rateRoutes);
-// app.use("/api/recommendations/content-based", contentBasedRoutes); // ❌ désactivé
 app.use("/api/movies/latestAdd", latestRoutes);
 app.use("/api/tmdb", tmdbRoutes);
 app.use("/api/movies", customMovieRoutes);
-// app.use("/api/filtrage", filtragecolobRoutes); // ❌ désactivé
-app.use("/api/hybride", hybrideRoutes); // ✅ actif
+app.use("/api/hybride", hybrideRoutes); 
 
 // =======================
 // Endpoint pour les films tendances
@@ -146,7 +142,7 @@ app.get("/api/movies/latest", (req, res) => {
 });
 
 // =======================
-// Nouvelle route pour exposer movies_enriched.csv
+// Route pour exposer movies_enriched.csv (indispensable pour Python)
 // =======================
 app.get("/api/csv/movies", (req, res) => {
   const filePath = path.join(__dirname, "movies_enriched.csv");
@@ -174,55 +170,29 @@ mongoose
     }
 
     app.listen(PORT, () => {
-      console.log(`✅ Backend Node démarré sur http://localhost:${PORT}`);
+      console.log(`✅ Backend Node démarré sur le port ${PORT}`);
 
-// 🚀 Ping automatique vers FastAPI pour le réveiller
-fetch("https://recommandit-1.onrender.com/hybrid", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    userId: "warmup",
-    top_n: 1,
-    k: 1,
-    favorites: [],
-    userRatings: []
-  })
-})
-  .then(async res => {
-    const text = await res.text();
-    try {
-      const data = JSON.parse(text);
-      console.log("🚀 Signal envoyé à FastAPI, réponse JSON:", data);
-    } catch {
-      console.error("⚠️ FastAPI a renvoyé du HTML (service endormi ou erreur):", text.slice(0, 100));
-    }
-  })
-  .catch(err => console.error("⚠️ Impossible de contacter FastAPI:", err));
+      // 🔄 FONCTION DE RÉVEIL OPTIMISÉE
+      const wakeUpFastAPI = () => {
+        // On ping l'URL de base (route "/" dans API.py)
+        fetch("https://recommandit-1.onrender.com/")
+          .then(async res => {
+            const text = await res.text();
+            try {
+              const data = JSON.parse(text);
+              console.log("🚀 FastAPI réveillé:", data.message || data);
+            } catch {
+              console.log("⏳ FastAPI renvoie encore du HTML, réveil en cours...");
+            }
+          })
+          .catch(err => console.error("⚠️ Impossible de contacter FastAPI:", err.message));
+      };
 
-// 🔄 Keep-alive toutes les 5 minutes
-setInterval(() => {
-  fetch("https://recommandit-1.onrender.com/hybrid", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      userId: "keepalive",
-      top_n: 1,
-      k: 1,
-      favorites: [],
-      userRatings: []
-    })
-  })
-    .then(async res => {
-      const text = await res.text();
-      try {
-        JSON.parse(text);
-        console.log("🔄 Ping envoyé à FastAPI (réponse JSON)");
-      } catch {
-        console.error("⚠️ FastAPI a renvoyé du HTML (service endormi ou erreur):", text.slice(0, 100));
-      }
-    })
-    .catch(err => console.error("⚠️ Erreur ping FastAPI:", err));
-}, 5 * 60 * 1000);
+      // Premier ping au démarrage
+      wakeUpFastAPI();
+
+      // Garder éveillé toutes les 14 minutes (Render dort après 15)
+      setInterval(wakeUpFastAPI, 14 * 60 * 1000);
     });
   })
   .catch((err) => {
