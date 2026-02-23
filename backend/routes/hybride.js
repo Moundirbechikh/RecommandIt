@@ -58,9 +58,9 @@ function enrichRecommendations(recommendations) {
 }
 
 // =============================
-// Fonction utilitaire : appel FastAPI avec retry
+// Fonction utilitaire : APPEL FASTAPI CORRIGÉ
 // =============================
-async function callFastAPI(params, retries = 3, delay = 5000) {
+async function callFastAPI(params, retries = 6, delay = 10000) {
   try {
     const response = await fetch("https://recommandit-1.onrender.com/hybrid", {
       method: "POST",
@@ -70,16 +70,23 @@ async function callFastAPI(params, retries = 3, delay = 5000) {
 
     const text = await response.text();
     try {
-      return JSON.parse(text);
-    } catch {
+      const data = JSON.parse(text);
+      return data;
+    } catch (err) {
+      // Si le JSON parse échoue, c'est que Render renvoie du HTML car il "boot"
       if (retries > 0) {
-        console.warn("⚠️ FastAPI endormi, nouvelle tentative dans", delay / 1000, "s...");
+        console.warn(`⚠️ FastAPI endormi, nouvelle tentative (${7-retries}/6) dans ${delay/1000}s...`);
         await new Promise((r) => setTimeout(r, delay));
         return await callFastAPI(params, retries - 1, delay);
       }
-      throw new Error("FastAPI indisponible après plusieurs tentatives");
+      throw new Error("FastAPI indisponible après plusieurs tentatives (Timeout 60s)");
     }
   } catch (err) {
+    if (retries > 0) {
+       console.warn("⚠️ Erreur de connexion, nouvelle tentative...");
+       await new Promise((r) => setTimeout(r, delay));
+       return await callFastAPI(params, retries - 1, delay);
+    }
     console.error("❌ Erreur FastAPI:", err);
     throw err;
   }
@@ -126,7 +133,7 @@ router.post("/", async (req, res) => {
     };
     console.log("📡 Appel FastAPI /hybrid avec paramètres:", params);
 
-    // 4️⃣ Appel FastAPI avec retry
+    // 4️⃣ Appel FastAPI avec retry (Le changement est ici)
     const data = await callFastAPI(params);
 
     const recs = data.recommendations || [];
