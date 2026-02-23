@@ -5,6 +5,7 @@ import pandas as pd
 import requests
 import io
 import os
+import asyncio
 
 from algo1 import build_description_clean_one
 from ubcf import recommender_ubcf_direct
@@ -15,6 +16,18 @@ from cb import ContentBasedRecommender
 # Initialiser FastAPI
 # =========================
 app = FastAPI()
+
+# =========================
+# NOUVEAU : Route de Santé (Health Check)
+# Indispensable pour que Render sache que l'app est réveillée
+# =========================
+@app.get("/")
+async def health_check():
+    return {
+        "status": "online",
+        "message": "RecommendIT FastAPI is awake",
+        "csv_loaded": not df_init.empty if 'df_init' in globals() else False
+    }
 
 # =========================
 # Schémas
@@ -54,12 +67,16 @@ class HybridRequest(BaseModel):
     userRatings: List[RatingsEntry] = []
 
 # =========================
-# Utilitaire : charger et nettoyer le CSV depuis backend Node.js
+# Utilitaire : Chargement CSV amélioré
 # =========================
 def load_csv():
+    """Charge le CSV avec un timeout plus long et une gestion d'erreur robuste."""
     try:
+        # On tente de joindre le backend Node
         backend_url = "https://recommandit.onrender.com/api/csv/movies"
-        response = requests.get(backend_url, timeout=10)
+        
+        # Augmentation du timeout à 30 secondes pour le réveil Render
+        response = requests.get(backend_url, timeout=30)
         response.raise_for_status()
 
         df = pd.read_csv(
@@ -72,144 +89,122 @@ def load_csv():
             on_bad_lines="skip"
         )
 
+        # Nettoyage standard
         df.columns = df.columns.str.strip()
         df.columns = df.columns.str.replace("\ufeff", "", regex=False)
 
         if "userId" in df.columns:
             df["userId"] = df["userId"].astype(str)
 
-        # Fallback pour description_clean
         if "description_clean" not in df.columns:
-            if "description" in df.columns:
-                df["description_clean"] = df["description"].fillna("placeholder description")
-            else:
-                df["description_clean"] = "placeholder description"
-        else:
-            if df["description_clean"].isnull().all() or (df["description_clean"].astype(str).str.strip() == "").all():
-                if "description" in df.columns:
-                    df["description_clean"] = df["description"].fillna("placeholder description")
-                else:
-                    df["description_clean"] = "placeholder description"
-
+            df["description_clean"] = df.get("description", "placeholder description").fillna("placeholder description")
+        
         return df
 
     except Exception as e:
-        print("❌ Erreur lors du chargement du CSV depuis backend:", e)
-        return pd.DataFrame([{
-            "movieId": "0",
-            "title": "placeholder",
-            "genres": "",
-            "year": "",
-            "description": "placeholder description",
-            "description_clean": "placeholder description"
-        }])
+        print(f"⚠️ Erreur chargement CSV: {e}")
+        # Si ça échoue, on essaie de charger le fichier temporaire local s'il existe
+        if os.path.exists("movies_temp.csv"):
+            return pd.read_csv("movies_temp.csv")
+        
+        return pd.DataFrame()
 
-# Charger le CSV une fois et sauvegarder temporairement pour ContentBasedRecommender
+# Chargement initial au démarrage
 df_init = load_csv()
-df_init.to_csv("movies_temp.csv", index=False)
+if not df_init.empty:
+    df_init.to_csv("movies_temp.csv", index=False)
 
-# =========================
-# Content-Based Recommender
-# =========================
+# Initialisation du recommender avec le fichier local
 cb_reco = ContentBasedRecommender(csv_path="movies_temp.csv")
-
-# =========================
-# UBCF (désactivé)
-# =========================
-# @app.post("/ubcf")
-# async def ubcf_recommend(req: UserRequest):
-#     df = load_csv()
-#     if df.empty or "userId" not in df.columns:
-#         return {"recommendations": []}
-#     recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=req.top_n, k=req.k)
-#     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
-
-# =========================
-# IBCF (désactivé)
-# =========================
-# @app.post("/ibcf")
-# async def ibcf_recommend(req: UserRequest):
-#     df = load_csv()
-#     if df.empty or "userId" not in df.columns:
-#         return {"recommendations": []}
-#     df["userId"] = df["userId"].astype(str)
-#     user_ratings_df = df[df["userId"] == str(req.userId)][["title", "rating"]]
-#     user_ratings = user_ratings_df.to_dict(orient="records")
-#     recs = recommender_ibcf_from_ratings(df=df, user_ratings=user_ratings, top_n=req.top_n, k=req.k)
-#     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
-
-# =========================
-# Content-Based (désactivé)
-# =========================
-# @app.post("/cb")
-# async def cb_recommend(req: FavoritesRequest):
-#     try:
-#         recommendations = cb_reco.recommend_with_details(
-#             favorites=req.favorites,
-#             top_n=req.top_n,
-#             exclude_seen=req.exclude_seen
-#         )
-#         return {"success": True, "recommendations": recommendations}
-#     except Exception as e:
-#         return {"success": False, "error": str(e)}
 
 # =========================
 # DESCRIPTION CLEAN
 # =========================
 @app.post("/description_clean")
-async def description_clean(title: str = Body(...), genres: List[str] = Body(...), year: str = Body(...), actors: List[str] = Body(...), description: str = Body(...)):
+async def description_clean(
+    title: str = Body(...), 
+    genres: List[str] = Body(...), 
+    year: str = Body(...), 
+    actors: List[str] = Body(...), 
+    description: str = Body(...)
+):
     try:
-        desc_clean = build_description_clean_one(title=title, genres=genres, year=year, actors=actors, description=description)
+        desc_clean = build_description_clean_one(
+            title=title, genres=genres, year=year, actors=actors, description=description
+        )
         return {"success": True, "description_clean": desc_clean}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
 # =========================
-# HYBRID (seul endpoint actif)
+# HYBRID (Endpoint Principal)
 # =========================
 @app.post("/hybrid")
 async def hybrid_recommend_api(req: HybridRequest):
+    # On recharge pour avoir les dernières données (favoris/notes récents)
     df = load_csv()
+    
     if df.empty:
-        return {"success": False, "recommendations": [], "error": "CSV vide ou inaccessible"}
+        return {"success": False, "recommendations": [], "error": "Base de données indisponible"}
 
-    ubcf_recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=100, k=req.k)
-    ibcf_recs = recommender_ibcf_from_ratings(df=df, user_ratings=[{"title": r.title, "rating": r.rating} for r in req.userRatings], top_n=100, k=req.k)
-    content_recs = cb_reco.recommend_from_titles(favorites=req.favorites, top_n=100, exclude_seen=[r.title for r in req.userRatings])
+    try:
+        # 1. Calcul des recos par les différents algos
+        ubcf_recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=100, k=req.k)
+        
+        user_ratings_list = [{"title": r.title, "rating": r.rating} for r in req.userRatings]
+        ibcf_recs = recommender_ibcf_from_ratings(df=df, user_ratings=user_ratings_list, top_n=100, k=req.k)
+        
+        content_recs = cb_reco.recommend_from_titles(
+            favorites=req.favorites, 
+            top_n=100, 
+            exclude_seen=[r.title for r in req.userRatings]
+        )
 
-    ibcf_norm = {film: score / 5.0 for film, score in ibcf_recs}
-    ubcf_norm = {film: score / 5.0 for film, score in ubcf_recs}
-    content_norm = {film: 1.0 for film in content_recs}
+        # 2. Normalisation et Hybridation
+        ibcf_norm = {film: score / 5.0 for film, score in ibcf_recs}
+        ubcf_norm = {film: score / 5.0 for film, score in ubcf_recs}
+        content_norm = {film: 1.0 for film in content_recs}
 
-    alpha = 0.75
-    beta = 0.5
-    candidate_films = set(ibcf_norm) | set(ubcf_norm) | set(content_norm)
+        alpha, beta = 0.75, 0.5
+        candidate_films = set(ibcf_norm) | set(ubcf_norm) | set(content_norm)
 
-    cf_scores = {film: beta * ubcf_norm.get(film, 0.0) + (1.0 - beta) * ibcf_norm.get(film, 0.0)
-                 for film in candidate_films}
-    hybrid_scores = {film: alpha * content_norm.get(film, 0.0) + (1.0 - alpha) * cf_scores.get(film, 0.0)
-                     for film in candidate_films}
+        cf_scores = {
+            film: beta * ubcf_norm.get(film, 0.0) + (1.0 - beta) * ibcf_norm.get(film, 0.0)
+            for film in candidate_films
+        }
+        hybrid_scores = {
+            film: alpha * content_norm.get(film, 0.0) + (1.0 - alpha) * cf_scores.get(film, 0.0)
+            for film in candidate_films
+        }
 
-    seen_titles = {r.title for r in req.userRatings}
-    seen_ids = set(df[df["title"].isin(seen_titles)]["movieId"].astype(str).tolist())
+        # 3. Filtrage des films déjà vus
+        seen_titles = {r.title for r in req.userRatings}
+        seen_ids = set(df[df["title"].isin(seen_titles)]["movieId"].astype(str).tolist())
 
-    recs = [(film, score) for film, score in hybrid_scores.items()
-            if film not in seen_titles and str(film) not in seen_ids]
+        recs = [
+            (film, score) for film, score in hybrid_scores.items()
+            if film not in seen_titles and str(film) not in seen_ids
+        ]
 
-    recs = sorted(recs, key=lambda x: x[1], reverse=True)[:req.top_n]
+        recs = sorted(recs, key=lambda x: x[1], reverse=True)[:req.top_n]
 
-    enriched = []
-    for film, score in recs:
-        row = df[df["movieId"].astype(str) == str(film)].head(1).to_dict(orient="records")
-        if row:
-            enriched.append({
-                "movieId": row[0]["movieId"],
-                "title": row[0]["title"],
-                "year": row[0].get("year", ""),
-                "genres": row[0].get("genres", "").split("|") if row[0].get("genres") else [],
-                "description": row[0].get("description", ""),
-                "backdrop": row[0].get("backdrop", ""),
-                "score": float(score)
-            })
+        # 4. Enrichissement des résultats
+        enriched = []
+        for film, score in recs:
+            row = df[df["movieId"].astype(str) == str(film)].head(1).to_dict(orient="records")
+            if row:
+                enriched.append({
+                    "movieId": row[0]["movieId"],
+                    "title": row[0]["title"],
+                    "year": row[0].get("year", ""),
+                    "genres": row[0].get("genres", "").split("|") if isinstance(row[0].get("genres"), str) else [],
+                    "description": row[0].get("description", ""),
+                    "backdrop": row[0].get("backdrop", ""),
+                    "score": round(float(score), 4)
+                })
 
-    return {"success": True, "recommendations": enriched}
+        return {"success": True, "recommendations": enriched}
+
+    except Exception as e:
+        print(f"❌ Erreur lors du calcul hybride: {e}")
+        return {"success": False, "error": str(e)}
