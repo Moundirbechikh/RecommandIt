@@ -44,9 +44,9 @@ const infoData = [
     tag: "Découverte",
     icon: <Film className="w-5 h-5 text-black" />,
     steps: [
-      "Chaque semaine, 3 nouveaux films sont mis en avant.",
-      "Ces films sont choisis selon leur popularité et leur sortie récente.",
-      "Tu peux les ajouter directement à tes favoris pour influencer tes recommandations."
+"Chaque utilisateur a le droit d’ajouter 2 films par semaine."
+"Il suffit de cliquer sur 'Ajouter un film', puis de rechercher le film en tapant son nom."
+"Ensuite, l’utilisateur peut lui attribuer une note allant jusqu’à 5 étoiles."
     ],
     details: [
       "Les affiches et titres sont visibles dans la section 'Nouveaux films'.",
