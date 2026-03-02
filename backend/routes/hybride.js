@@ -10,9 +10,7 @@ const csv = require("csv-parser");
 const router = express.Router();
 router.use(authMiddleware);
 
-// =============================
 // Charger le CSV en mémoire pour convertir movieId → infos
-// =============================
 let moviesMap = new Map();
 function loadMovies() {
   return new Promise((resolve, reject) => {
@@ -28,6 +26,7 @@ function loadMovies() {
           description: row.description,
           backdrop: row.backdrop,
         };
+        // Stocker par id et par titre
         moviesMap.set(String(row.movieId), movieData);
         moviesMap.set(row.title, movieData);
       })
@@ -37,59 +36,37 @@ function loadMovies() {
 }
 loadMovies().catch(console.error);
 
-// =============================
 // Fonction d’enrichissement robuste
-// =============================
 function enrichRecommendations(recommendations) {
   return recommendations
     .map((rec) => {
       let movieInfo = null;
-      if (rec.movieId && rec.title) return rec; // objet complet
-      if (rec.title) movieInfo = moviesMap.get(rec.title);
-      if (!movieInfo && rec.movieId) movieInfo = moviesMap.get(String(rec.movieId));
+
+      // Cas 1 : FastAPI renvoie déjà un objet complet
+      if (rec.movieId && rec.title) {
+        return rec;
+      }
+
+      // Cas 2 : FastAPI renvoie {title, score}
+      if (rec.title) {
+        movieInfo = moviesMap.get(rec.title);
+      }
+
+      // Cas 3 : FastAPI renvoie {movieId, score}
+      if (!movieInfo && rec.movieId) {
+        movieInfo = moviesMap.get(String(rec.movieId));
+      }
+
+      // Cas 4 : FastAPI renvoie un tuple [id, score]
       if (!movieInfo && Array.isArray(rec) && rec.length === 2) {
         const [film, score] = rec;
         movieInfo = moviesMap.get(String(film)) || moviesMap.get(film);
         return movieInfo ? { ...movieInfo, score } : null;
       }
+
       return movieInfo ? { ...movieInfo, score: rec.score } : null;
     })
     .filter(Boolean);
-}
-
-// =============================
-// Fonction utilitaire : APPEL FASTAPI CORRIGÉ
-// =============================
-async function callFastAPI(params, retries = 6, delay = 10000) {
-  try {
-    const response = await fetch("https://recommandit-1.onrender.com/hybrid", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(params),
-    });
-
-    const text = await response.text();
-    try {
-      const data = JSON.parse(text);
-      return data;
-    } catch (err) {
-      // Si le JSON parse échoue, c'est que Render renvoie du HTML car il "boot"
-      if (retries > 0) {
-        console.warn(`⚠️ FastAPI endormi, nouvelle tentative (${7-retries}/6) dans ${delay/1000}s...`);
-        await new Promise((r) => setTimeout(r, delay));
-        return await callFastAPI(params, retries - 1, delay);
-      }
-      throw new Error("FastAPI indisponible après plusieurs tentatives (Timeout 60s)");
-    }
-  } catch (err) {
-    if (retries > 0) {
-       console.warn("⚠️ Erreur de connexion, nouvelle tentative...");
-       await new Promise((r) => setTimeout(r, delay));
-       return await callFastAPI(params, retries - 1, delay);
-    }
-    console.error("❌ Erreur FastAPI:", err);
-    throw err;
-  }
 }
 
 // =============================
@@ -105,7 +82,7 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ error: "Utilisateur non authentifié" });
     }
 
-    // 1️⃣ Favoris
+    // 1️⃣ Récupérer les favoris depuis MongoDB et convertir en titres
     const favoritesDocs = await Favorite.find({ userId: userObjectId }).lean();
     const favoriteTitles = favoritesDocs
       .map((f) => {
@@ -114,16 +91,18 @@ router.post("/", async (req, res) => {
       })
       .filter(Boolean);
 
-    // 2️⃣ Notes
+    // 2️⃣ Récupérer les notes depuis MongoDB et convertir en titres
     const rateDoc = await Rate.findOne({ userId: userObjectId }).lean();
     const userRatings = (rateDoc?.ratings || [])
       .map((r) => {
         const movie = moviesMap.get(String(r.filmId));
-        return movie ? { title: movie.title, rating: r.note || r.rating } : null;
+        return movie
+          ? { title: movie.title, rating: r.note || r.rating }
+          : null;
       })
       .filter(Boolean);
 
-    // 3️⃣ Payload
+    // 3️⃣ Construire le payload pour FastAPI
     const params = {
       userId: userObjectId,
       top_n: req.body.top_n || 100,
@@ -133,21 +112,34 @@ router.post("/", async (req, res) => {
     };
     console.log("📡 Appel FastAPI /hybrid avec paramètres:", params);
 
-    // 4️⃣ Appel FastAPI avec retry (Le changement est ici)
-    const data = await callFastAPI(params);
+    // 4️⃣ Appeler FastAPI /hybrid via Render
+    const response = await fetch("https://recommandit-1.onrender.com/hybrid", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
 
+    if (!response.ok) {
+      const text = await response.text();
+      console.error("❌ FastAPI error:", text);
+      return res.status(500).json({ error: "Erreur FastAPI", details: text });
+    }
+
+    const data = await response.json();
     const recs = data.recommendations || [];
     console.log("🎯 Nombre de recommandations hybrides reçues:", recs.length);
     console.log("📌 Premières recommandations:", recs.slice(0, 3));
 
-    // 5️⃣ Enrichir
+    // 5️⃣ Enrichir les résultats si besoin
     const enriched = enrichRecommendations(recs);
 
     res.json({ success: true, recommendations: enriched });
     console.log("====================== HYBRIDE END ======================\n");
   } catch (err) {
     console.error("❌ Erreur route hybride:", err);
-    res.status(500).json({ error: "Erreur serveur Hybride", details: err.message });
+    res
+      .status(500)
+      .json({ error: "Erreur serveur Hybride", details: err.message });
   }
 });
 
