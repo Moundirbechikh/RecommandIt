@@ -11,9 +11,6 @@ from ubcf import recommender_ubcf_direct
 from ibcf import recommender_ibcf_from_ratings
 from cb import ContentBasedRecommender
 
-# =========================
-# Initialiser FastAPI
-# =========================
 app = FastAPI()
 
 # =========================
@@ -87,46 +84,34 @@ def load_csv():
         print("❌ Erreur lors du chargement du CSV depuis backend:", e)
         return pd.DataFrame(columns=["movieId", "title", "genres", "year", "description", "description_clean"])
 
-# Charger le CSV une fois et sauvegarder temporairement
+# =========================
+# Initialisation directe
+# =========================
 df_init = load_csv()
-df_init.to_csv("movies_temp.csv", index=False)
+cb_reco = ContentBasedRecommender(df=df_init)  # ⚡️ plus besoin de movies_temp.csv
 
 # =========================
-# Content-Based Recommender
-# =========================
-cb_reco = ContentBasedRecommender(csv_path="movies_temp.csv")
-
-# =========================
-# UBCF
+# Endpoints
 # =========================
 @app.post("/ubcf")
 async def ubcf_recommend(req: UserRequest):
     df = load_csv()
     if "userId" not in df.columns:
         return {"recommendations": []}
-
     recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=req.top_n, k=req.k)
     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
 
-# =========================
-# IBCF
-# =========================
 @app.post("/ibcf")
 async def ibcf_recommend(req: UserRequest):
     df = load_csv()
     if "userId" not in df.columns:
         return {"recommendations": []}
-
     df["userId"] = df["userId"].astype(str)
     user_ratings_df = df[df["userId"] == str(req.userId)][["title", "rating"]]
     user_ratings = user_ratings_df.to_dict(orient="records")
-
     recs = recommender_ibcf_from_ratings(df=df, user_ratings=user_ratings, top_n=req.top_n, k=req.k)
     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
 
-# =========================
-# Content-Based
-# =========================
 @app.post("/cb")
 async def cb_recommend(req: FavoritesRequest):
     try:
@@ -135,9 +120,6 @@ async def cb_recommend(req: FavoritesRequest):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-# =========================
-# DESCRIPTION CLEAN
-# =========================
 @app.post("/description_clean")
 async def description_clean(title: str = Body(...), genres: List[str] = Body(...), year: str = Body(...), actors: List[str] = Body(...), description: str = Body(...)):
     try:
@@ -146,9 +128,6 @@ async def description_clean(title: str = Body(...), genres: List[str] = Body(...
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-# =========================
-# HYBRID
-# =========================
 @app.post("/hybrid")
 async def hybrid_recommend_api(req: HybridRequest):
     df = load_csv()
