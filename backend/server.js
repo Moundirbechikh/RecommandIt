@@ -5,16 +5,17 @@ const path = require("path");
 const csv = require("csv-parser");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const fetch = require("node-fetch"); 
 
 // Import des routes
-const authRoutes = require("./routes/auth"); 
-const favoriteRoutes = require("./routes/favoriteRoutes"); 
+const authRoutes = require("./routes/auth");
+const favoriteRoutes = require("./routes/favoriteRoutes");
 const rateRoutes = require("./routes/rateRoutes");
+const contentBasedRoutes = require("./routes/contentBasedRoutes");
 const latestRoutes = require("./routes/latest");
 const tmdbRoutes = require("./routes/tmdbRoutes");
 const customMovieRoutes = require("./routes/customMovieRoutes");
-const hybrideRoutes = require("./routes/hybride"); 
+const filtragecolobRoutes = require("./routes/filtragecolob");
+const hybrideRoutes = require("./routes/hybride");
 
 // Import de la fonction de synchronisation
 const syncMovies = require("./utils/syncMovies");
@@ -74,10 +75,12 @@ app.get("/api/movies", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/user/favorites", favoriteRoutes);
 app.use("/api/rates", rateRoutes);
+app.use("/api/recommendations/content-based", contentBasedRoutes);
 app.use("/api/movies/latestAdd", latestRoutes);
 app.use("/api/tmdb", tmdbRoutes);
 app.use("/api/movies", customMovieRoutes);
-app.use("/api/hybride", hybrideRoutes); 
+app.use("/api/filtrage", filtragecolobRoutes);
+app.use("/api/hybride", hybrideRoutes);
 
 // =======================
 // Endpoint pour les films tendances
@@ -142,7 +145,7 @@ app.get("/api/movies/latest", (req, res) => {
 });
 
 // =======================
-// Route pour exposer movies_enriched.csv (indispensable pour Python)
+// Route pour exposer movies_enriched.csv (indispensable pour FastAPI)
 // =======================
 app.get("/api/csv/movies", (req, res) => {
   const filePath = path.join(__dirname, "movies_enriched.csv");
@@ -170,29 +173,7 @@ mongoose
     }
 
     app.listen(PORT, () => {
-      console.log(`✅ Backend Node démarré sur le port ${PORT}`);
-
-      // 🔄 FONCTION DE RÉVEIL OPTIMISÉE
-      const wakeUpFastAPI = () => {
-        // On ping l'URL de base (route "/" dans API.py)
-        fetch("https://recommandit-1.onrender.com/")
-          .then(async res => {
-            const text = await res.text();
-            try {
-              const data = JSON.parse(text);
-              console.log("🚀 FastAPI réveillé:", data.message || data);
-            } catch {
-              console.log("⏳ FastAPI renvoie encore du HTML, réveil en cours...");
-            }
-          })
-          .catch(err => console.error("⚠️ Impossible de contacter FastAPI:", err.message));
-      };
-
-      // Premier ping au démarrage
-      wakeUpFastAPI();
-
-      // Garder éveillé toutes les 14 minutes (Render dort après 15)
-      setInterval(wakeUpFastAPI, 14 * 60 * 1000);
+      console.log(`✅ Backend démarré sur http://localhost:${PORT}`);
     });
   })
   .catch((err) => {
