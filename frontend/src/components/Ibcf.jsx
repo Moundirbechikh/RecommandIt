@@ -26,7 +26,7 @@ function Ibcf() {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           // IBCF nécessite userRatings → on envoie une liste vide pour l’instant
-          body: JSON.stringify({ top_n: 20, k: 41, userRatings: [] }),
+          body: JSON.stringify({ top_n: 8, k: 41, userRatings: [] }),
         });
 
         if (!response.ok) {
