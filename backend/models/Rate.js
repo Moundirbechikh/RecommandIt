@@ -1,8 +1,7 @@
-// models/Rate.js
 const mongoose = require("mongoose");
 
 const rateSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  userId: { type: String, required: true }, // ⚡️ maintenant une string
   ratings: [
     {
       filmId: { type: String, required: true },
