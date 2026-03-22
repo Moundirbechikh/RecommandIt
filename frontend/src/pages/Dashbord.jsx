@@ -46,7 +46,7 @@ function Dashboard({ onLogout, user }) {
   }, []);
 
   const showWelcome = favorites !== null && favorites.length === 0;
-  const notEnoughRatings = ratingCount !== null && ratingCount < 11;
+  const notEnoughRatings = ratingCount !== null && ratingCount < 5;
 
   return (
     <div className="border-t-2 border-black min-h-screen h-full flex flex-col bg-gradient-to-t from-stone-400 via-stone-300 to-stone-200 ">
