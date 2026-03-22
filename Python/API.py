@@ -1,17 +1,98 @@
 from fastapi import FastAPI, Body
 from pydantic import BaseModel
-from typing import List
-import pandas as pd
-import requests
-import io
+from typing import List, Dict, Any, Optional
 import os
+import pandas as pd
+from motor.motor_asyncio import AsyncIOMotorClient
+from dotenv import load_dotenv
 
 from algo1 import build_description_clean_one
 from ubcf import recommender_ubcf_direct
 from ibcf import recommender_ibcf_from_ratings
-from cb import ContentBasedRecommender
+from cb import ContentBasedRecommender  # ⚡️ version adaptée pour MongoDB
 
+# =========================
+# Initialiser FastAPI
+# =========================
 app = FastAPI()
+
+# =========================
+# Connexion MongoDB Atlas
+# =========================
+load_dotenv()
+MONGO_URI = os.getenv("MONGO_URI")
+print("🔎 Valeur de MONGO_URI:", MONGO_URI)
+
+client = AsyncIOMotorClient(MONGO_URI)
+db = client["RecommendIT"]
+movies_collection = db["movies"]
+rates_collection = db["rates"]
+
+# cb_reco et cache des films
+cb_reco: Optional[ContentBasedRecommender] = None
+movies_map: Dict[int, Dict[str, Any]] = {}
+_movies_count_cache: int = 0  # compteur local du nombre de films préchargés
+
+# =========================
+# Helpers cache / refresh
+# =========================
+async def load_movies_cache():
+    """
+    Recharge entièrement le cache movies_map depuis MongoDB.
+    """
+    global movies_map, _movies_count_cache
+    movies_docs = await movies_collection.find({}, {
+        "movieId": 1, "title": 1, "year": 1,
+        "genres": 1, "description": 1, "backdrop": 1
+    }).to_list(None)
+    movies_map = {}
+    for m in movies_docs:
+        try:
+            mid = int(m.get("movieId"))
+        except Exception:
+            # si movieId n'est pas convertible, on ignore l'entrée
+            continue
+        movies_map[mid] = m
+    _movies_count_cache = len(movies_map)
+    print(f"📊 Cache films rechargé: {_movies_count_cache} films")
+
+async def refresh_movies_cache_if_needed():
+    """
+    Vérifie le nombre de documents dans la collection movies.
+    Si différent du cache local, recharge le cache.
+    """
+    global _movies_count_cache
+    try:
+        count = await movies_collection.count_documents({})
+    except Exception as e:
+        print("❌ Impossible de compter les films dans MongoDB:", e)
+        return
+    if count != _movies_count_cache:
+        print(f"🔁 Changement détecté dans la collection movies (db={count} vs cache={_movies_count_cache}), rechargement du cache...")
+        await load_movies_cache()
+    else:
+        # pour debug léger
+        print(f"✅ Cache films à jour ({_movies_count_cache} films)")
+
+# =========================
+# Startup: initialisation du cache et du CB recommender
+# =========================
+@app.on_event("startup")
+async def startup_event():
+    global cb_reco
+    try:
+        await client.admin.command("ping")
+        print("✅ Connecté à MongoDB Atlas")
+
+        # Charger le cache initial des films
+        await load_movies_cache()
+
+        # Initialiser le ContentBasedRecommender (il charge ses propres données depuis la collection)
+        cb_reco = await ContentBasedRecommender.create(movies_collection)
+        print("✅ ContentBasedRecommender initialisé")
+    except Exception as e:
+        print("❌ Erreur au démarrage:", str(e))
+        raise e
 
 # =========================
 # Schémas
@@ -51,77 +132,93 @@ class HybridRequest(BaseModel):
     userRatings: List[RatingsEntry] = []
 
 # =========================
-# Utilitaire : charger et nettoyer le CSV depuis backend Node.js
-# =========================
-def load_csv():
-    try:
-        backend_url = "https://recommandit.onrender.com/api/csv/movies"
-        response = requests.get(backend_url, timeout=10)
-        response.raise_for_status()
-
-        df = pd.read_csv(
-            io.StringIO(response.text),
-            encoding="utf-8",
-            sep=",",
-            quotechar='"',
-            escapechar="\\",
-            engine="python",
-            on_bad_lines="skip"
-        )
-
-        df.columns = df.columns.str.strip()
-        df.columns = df.columns.str.replace("\ufeff", "", regex=False)
-
-        if "userId" in df.columns:
-            df["userId"] = df["userId"].astype(str)
-
-        if "description_clean" not in df.columns:
-            df["description_clean"] = ""
-
-        return df
-
-    except Exception as e:
-        print("❌ Erreur lors du chargement du CSV depuis backend:", e)
-        return pd.DataFrame(columns=["movieId", "title", "genres", "year", "description", "description_clean"])
-
-# =========================
-# Initialisation directe
-# =========================
-df_init = load_csv()
-cb_reco = ContentBasedRecommender(df=df_init)  # ⚡️ plus besoin de movies_temp.csv
-
-# =========================
-# Endpoints
+# UBCF
 # =========================
 @app.post("/ubcf")
 async def ubcf_recommend(req: UserRequest):
-    df = load_csv()
-    if "userId" not in df.columns:
-        return {"recommendations": []}
+    # S'assurer que le cache films est à jour
+    await refresh_movies_cache_if_needed()
+
+    df_list = []
+    async for rate in rates_collection.find():
+        for r in rate.get("ratings", []):
+            film_id = r.get("filmId")
+            if film_id is None:
+                continue
+            movie = movies_map.get(int(film_id))
+            if movie:
+                df_list.append({
+                    "userId": str(rate.get("userId")),
+                    "title": movie.get("title"),
+                    "rating": r.get("note", r.get("rating"))
+                })
+
+    df = pd.DataFrame(df_list)
     recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=req.top_n, k=req.k)
     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
 
+# =========================
+# IBCF
+# =========================
 @app.post("/ibcf")
 async def ibcf_recommend(req: UserRequest):
-    df = load_csv()
-    if "userId" not in df.columns:
-        return {"recommendations": []}
-    df["userId"] = df["userId"].astype(str)
-    user_ratings_df = df[df["userId"] == str(req.userId)][["title", "rating"]]
-    user_ratings = user_ratings_df.to_dict(orient="records")
+    # S'assurer que le cache films est à jour
+    await refresh_movies_cache_if_needed()
+
+    df_list = []
+    async for rate in rates_collection.find():
+        for r in rate.get("ratings", []):
+            film_id = r.get("filmId")
+            if film_id is None:
+                continue
+            movie = movies_map.get(int(film_id))
+            if movie:
+                df_list.append({
+                    "userId": str(rate.get("userId")),
+                    "title": movie.get("title"),
+                    "rating": r.get("note", r.get("rating"))
+                })
+
+    df = pd.DataFrame(df_list)
+    user_ratings = [d for d in df_list if d["userId"] == str(req.userId)]
+
     recs = recommender_ibcf_from_ratings(df=df, user_ratings=user_ratings, top_n=req.top_n, k=req.k)
     return {"recommendations": [{"title": t, "score": float(s)} for t, s in recs]}
 
+# =========================
+# Content-Based
+# =========================
 @app.post("/cb")
 async def cb_recommend(req: FavoritesRequest):
+    # Vérifier et recharger le cache films si nécessaire
+    await refresh_movies_cache_if_needed()
+
     try:
-        movie_ids = cb_reco.recommend_from_titles(favorites=req.favorites, top_n=req.top_n, exclude_seen=req.exclude_seen)
+        # ⚡️ Recréer le ContentBasedRecommender à chaque requête
+        cb_reco = await ContentBasedRecommender.create(movies_collection)
+
+        movie_ids = cb_reco.recommend_from_titles(
+            favorites=req.favorites,
+            top_n=req.top_n,
+            exclude_seen=req.exclude_seen
+        )
+        print(f"🔎 Content-Based recs ({len(movie_ids)}):", movie_ids[:5])
         return {"success": True, "recommendations": movie_ids}
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+
+# =========================
+# DESCRIPTION CLEAN
+# =========================
 @app.post("/description_clean")
-async def description_clean(title: str = Body(...), genres: List[str] = Body(...), year: str = Body(...), actors: List[str] = Body(...), description: str = Body(...)):
+async def description_clean(
+    title: str = Body(...),
+    genres: List[str] = Body(...),
+    year: str = Body(...),
+    actors: List[str] = Body(...),
+    description: str = Body(...)
+):
     try:
         desc_clean = build_description_clean_one(title=title, genres=genres, year=year, actors=actors, description=description)
         return {"success": True, "description_clean": desc_clean}
@@ -130,47 +227,114 @@ async def description_clean(title: str = Body(...), genres: List[str] = Body(...
 
 @app.post("/hybrid")
 async def hybrid_recommend_api(req: HybridRequest):
-    df = load_csv()
-    if df.empty:
-        return {"success": False, "recommendations": [], "error": "CSV vide ou inaccessible"}
+    print("\n====================== HYBRID DEBUG ======================")
+    print("📩 Payload reçu:", req.dict())
 
+    # Vérifier et recharger le cache films si nécessaire
+    await refresh_movies_cache_if_needed()
+
+    # Construire la liste de ratings
+    df_list = []
+    user_seen_titles_db = set()
+    user_seen_ids_db = set()
+
+    async for rate in rates_collection.find():
+        uid = str(rate.get("userId"))
+        for r in rate.get("ratings", []):
+            film_id = r.get("filmId")
+            if film_id is None:
+                continue
+            movie = movies_map.get(int(film_id))
+            if movie:
+                df_list.append({
+                    "userId": uid,
+                    "title": movie.get("title"),
+                    "rating": r.get("note", r.get("rating"))
+                })
+                if uid == str(req.userId):
+                    user_seen_titles_db.add(movie.get("title"))
+                    user_seen_ids_db.add(int(film_id))
+
+    # Films déjà vus
+    user_seen_titles_payload = {r.title for r in req.userRatings}
+    seen_titles = user_seen_titles_db | user_seen_titles_payload
+    title_to_id = {m["title"]: int(m["movieId"]) for m in movies_map.values() if "movieId" in m and "title" in m}
+    id_to_title = {int(m["movieId"]): m["title"] for m in movies_map.values() if "movieId" in m and "title" in m}
+
+    seen_ids = set(user_seen_ids_db)
+    for t in user_seen_titles_payload:
+        mid = title_to_id.get(t)
+        if mid is not None:
+            seen_ids.add(mid)
+
+    df = pd.DataFrame(df_list)
+
+    # UBCF
     ubcf_recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=100, k=req.k)
-    ibcf_recs = recommender_ibcf_from_ratings(df=df, user_ratings=[{"title": r.title, "rating": r.rating} for r in req.userRatings], top_n=100, k=req.k)
-    content_recs = cb_reco.recommend_from_titles(favorites=req.favorites, top_n=100, exclude_seen=[r.title for r in req.userRatings])
 
-    ibcf_norm = {film: score / 5.0 for film, score in ibcf_recs}
-    ubcf_norm = {film: score / 5.0 for film, score in ubcf_recs}
-    content_norm = {film: 1.0 for film in content_recs}
+    # IBCF
+    user_ratings_list = [{"title": r.title, "rating": r.rating} for r in req.userRatings]
+    ibcf_recs = recommender_ibcf_from_ratings(df=df, user_ratings=user_ratings_list, top_n=100, k=req.k)
+
+    # ⚡️ Recréer Content-Based à chaque appel
+    cb_reco = await ContentBasedRecommender.create(movies_collection)
+    content_recs = cb_reco.recommend_with_details(
+        favorites=req.favorites,
+        top_n=100,
+        exclude_seen=list(seen_titles)
+    )
+
+    # Normalisation et conversion en movieId
+    ibcf_norm = {}
+    for film, score in ibcf_recs:
+        mid = title_to_id.get(film)
+        if mid:
+            ibcf_norm[mid] = score / 5.0
+
+    ubcf_norm = {}
+    for film, score in ubcf_recs:
+        mid = title_to_id.get(film)
+        if mid:
+            ubcf_norm[mid] = score / 5.0
+
+    content_norm = {rec["movieId"]: rec["score"] for rec in content_recs}
 
     alpha = 0.75
     beta = 0.5
     candidate_films = set(ibcf_norm) | set(ubcf_norm) | set(content_norm)
 
-    cf_scores = {film: beta * ubcf_norm.get(film, 0.0) + (1.0 - beta) * ibcf_norm.get(film, 0.0)
-                 for film in candidate_films}
-    hybrid_scores = {film: alpha * content_norm.get(film, 0.0) + (1.0 - alpha) * cf_scores.get(film, 0.0)
-                     for film in candidate_films}
+    def is_seen(mid):
+        return mid in seen_ids
 
-    seen_titles = {r.title for r in req.userRatings}
-    seen_ids = set(df[df["title"].isin(seen_titles)]["movieId"].astype(str).tolist())
+    candidate_films = {mid for mid in candidate_films if not is_seen(mid)}
 
-    recs = [(film, score) for film, score in hybrid_scores.items()
-            if film not in seen_titles and str(film) not in seen_ids]
+    # Fusion des scores par movieId
+    hybrid_scores = {}
+    for mid in candidate_films:
+        score_cb = content_norm.get(mid, 0.0)
+        score_cf = beta * ubcf_norm.get(mid, 0.0) + (1.0 - beta) * ibcf_norm.get(mid, 0.0)
+        score = alpha * score_cb + (1.0 - alpha) * score_cf
+        hybrid_scores[mid] = score
 
-    recs = sorted(recs, key=lambda x: x[1], reverse=True)[:req.top_n]
+    recs = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)[:req.top_n]
 
+    # Enrichissement
     enriched = []
-    for film, score in recs:
-        row = df[df["movieId"].astype(str) == str(film)].head(1).to_dict(orient="records")
-        if row:
+    for mid, score in recs:
+        movie = movies_map.get(mid)
+        if movie:
             enriched.append({
-                "movieId": row[0]["movieId"],
-                "title": row[0]["title"],
-                "year": row[0].get("year", ""),
-                "genres": row[0].get("genres", "").split("|") if row[0].get("genres") else [],
-                "description": row[0].get("description", ""),
-                "backdrop": row[0].get("backdrop", ""),
+                "movieId": mid,
+                "title": id_to_title.get(mid, ""),
+                "year": movie.get("year", ""),
+                "genres": movie.get("genres", []),
+                "description": movie.get("description", ""),
+                "backdrop": movie.get("backdrop", ""),
                 "score": float(score)
             })
+
+    print(f"🎯 Nombre de recommandations enrichies: {len(enriched)}")
+    print("📌 Premières recommandations enrichies:", enriched[:3])
+    print("====================== HYBRID END ======================\n")
 
     return {"success": True, "recommendations": enriched}
