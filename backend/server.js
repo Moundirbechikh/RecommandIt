@@ -1,14 +1,15 @@
 require("dotenv").config();
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const csv = require("csv-parser");
 const cors = require("cors");
 const mongoose = require("mongoose");
 
+// Import des modèles
+const Movie = require("./models/Movie");
+const Rate = require("./models/Rate");
+
 // Import des routes
-const authRoutes = require("./routes/auth");
-const favoriteRoutes = require("./routes/favoriteRoutes");
+const authRoutes = require("./routes/auth"); // routes d’authentification
+const favoriteRoutes = require("./routes/favoriteRoutes"); // routes favoris
 const rateRoutes = require("./routes/rateRoutes");
 const contentBasedRoutes = require("./routes/contentBasedRoutes");
 const latestRoutes = require("./routes/latest");
@@ -17,8 +18,6 @@ const customMovieRoutes = require("./routes/customMovieRoutes");
 const filtragecolobRoutes = require("./routes/filtragecolob");
 const hybrideRoutes = require("./routes/hybride");
 
-// Import de la fonction de synchronisation
-const syncMovies = require("./utils/syncMovies");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -27,46 +26,71 @@ const PORT = process.env.PORT || 5000;
 // Middlewares globaux
 // =======================
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // pour lire le JSON dans les requêtes
 
-// =======================
-// Endpoint pour récupérer les films uniques depuis CSV
-// =======================
-app.get("/api/movies", (req, res) => {
-  const moviesMap = new Map();
-  const filePath = path.join(__dirname, "movies_enriched.csv");
 
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: "Fichier movies_enriched.csv introuvable" });
+app.get('/keep-alive', (req, res) => {
+  console.log("Ping reçu ! Le serveur reste éveillé.");
+  res.status(200).send('Instance active');
+});
+// =======================
+// Endpoint pour récupérer tous les films depuis MongoDB
+// =======================
+app.get("/api/movies", async (req, res) => {
+  try {
+    const movies = await Movie.find().lean();
+    res.json(movies);
+  } catch (err) {
+    console.error("❌ Erreur récupération films:", err);
+    res.status(500).json({ error: "Erreur lors de la récupération des films" });
   }
+});
 
-  fs.createReadStream(filePath)
-    .pipe(csv())
-    .on("data", (data) => {
-      const movieId = data.movieId;
-      let genres = [];
-      if (data.genres && typeof data.genres === "string") {
-        genres = data.genres.split("|");
-      }
-      if (!moviesMap.has(movieId)) {
-        moviesMap.set(movieId, {
-          movieId: data.movieId,
-          title: data.title,
-          year: data.year,
-          genres: genres,
-          description: data.description,
-          actors: data.actors ? data.actors.split(",") : [],
-          backdrop: data.backdrop,
+// =======================
+// Endpoint pour les films tendances (les plus récents et mieux notés)
+// =======================
+app.get("/api/movies/latest", async (req, res) => {
+  try {
+    const movies = await Movie.find().lean();
+
+    const moviesWithRatings = await Promise.all(
+      movies.map(async (movie) => {
+        const rates = await Rate.find({ "ratings.filmId": String(movie.movieId) }).lean();
+
+        let allRatings = [];
+        rates.forEach(r => {
+          r.ratings.forEach(rt => {
+            if (rt.filmId === String(movie.movieId)) {
+              allRatings.push(rt.note);
+            }
+          });
         });
-      }
-    })
-    .on("end", () => {
-      res.json(Array.from(moviesMap.values()));
-    })
-    .on("error", (err) => {
-      console.error("Erreur lecture CSV:", err);
-      res.status(500).json({ error: "Erreur lors de la lecture du fichier CSV" });
+
+        const avgRating = allRatings.length > 0
+          ? allRatings.reduce((sum, n) => sum + n, 0) / allRatings.length
+          : 0;
+
+        return { ...movie, avgRating };
+      })
+    );
+
+    const sorted = moviesWithRatings.sort((a, b) => {
+      const yearA = parseInt(a.year) || 0;
+      const yearB = parseInt(b.year) || 0;
+      if (yearB !== yearA) return yearB - yearA;
+      return b.avgRating - a.avgRating;
     });
+
+    const finalMovies = sorted.slice(0, 12).map(m => ({
+      ...m,
+      rating: m.avgRating
+    }));
+
+    res.json(finalMovies);
+  } catch (err) {
+    console.error("❌ Erreur films tendances:", err);
+    res.status(500).json({ error: "Erreur lors de la récupération des films tendances" });
+  }
 });
 
 // =======================
@@ -83,79 +107,6 @@ app.use("/api/filtrage", filtragecolobRoutes);
 app.use("/api/hybride", hybrideRoutes);
 
 // =======================
-// Endpoint pour les films tendances
-// =======================
-app.get("/api/movies/latest", (req, res) => {
-  const moviesMap = new Map();
-  const filePath = path.join(__dirname, "movies_enriched.csv");
-
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: "Fichier movies_enriched.csv introuvable" });
-  }
-
-  fs.createReadStream(filePath)
-    .pipe(csv())
-    .on("data", (data) => {
-      const movieId = data.movieId;
-      if (!moviesMap.has(movieId)) {
-        moviesMap.set(movieId, {
-          movieId: data.movieId,
-          title: data.title,
-          year: data.year,
-          release_date: data.release_date,
-          genres: data.genres ? data.genres.split("|") : [],
-          description: data.description,
-          backdrop: data.backdrop,
-          ratingsCount: 0,
-          _ratings: []
-        });
-      }
-      const movie = moviesMap.get(movieId);
-      movie.ratingsCount += 1;
-      if (data.rating && !isNaN(data.rating)) {
-        movie._ratings.push(parseFloat(data.rating));
-      }
-    })
-    .on("end", () => {
-      const movies = Array.from(moviesMap.values()).map((m) => {
-        let avg = 0;
-        if (m._ratings.length > 0) {
-          avg = m._ratings.reduce((sum, r) => sum + r, 0) / m._ratings.length;
-        }
-        m._avgRating = avg;
-        delete m._ratings;
-        return m;
-      });
-      const sorted = movies.sort((a, b) => {
-        const dateA = new Date(a.release_date || a.year);
-        const dateB = new Date(b.release_date || b.year);
-        if (dateB - dateA !== 0) return dateB - dateA;
-        return b._avgRating - a._avgRating;
-      });
-      const finalMovies = sorted.slice(0, 12).map((m) => {
-        delete m._avgRating;
-        return { ...m, rating: null };
-      });
-      res.json(finalMovies);
-    })
-    .on("error", (err) => {
-      console.error("Erreur lecture CSV:", err);
-      res.status(500).json({ error: "Erreur lors de la lecture du fichier CSV" });
-    });
-});
-
-// =======================
-// Route pour exposer movies_enriched.csv (indispensable pour FastAPI)
-// =======================
-app.get("/api/csv/movies", (req, res) => {
-  const filePath = path.join(__dirname, "movies_enriched.csv");
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).send("CSV introuvable");
-  }
-  res.sendFile(filePath);
-});
-
-// =======================
 // Connexion MongoDB Atlas + lancement serveur
 // =======================
 console.log("🔎 Valeur de process.env.MONGO_URI:", process.env.MONGO_URI);
@@ -164,14 +115,6 @@ mongoose
   .connect(process.env.MONGO_URI, { dbName: "RecommendIT" })
   .then(async () => {
     console.log("✅ Connecté à MongoDB Atlas");
-
-    try {
-      await syncMovies();
-      console.log("🎬 Synchronisation des films terminée au démarrage");
-    } catch (err) {
-      console.error("⚠️ Erreur lors de la synchronisation:", err);
-    }
-
     app.listen(PORT, () => {
       console.log(`✅ Backend démarré sur http://localhost:${PORT}`);
     });
