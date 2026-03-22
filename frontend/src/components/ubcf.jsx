@@ -24,7 +24,7 @@ function Ubcf() {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ top_n: 20, k: 41 }),
+          body: JSON.stringify({ top_n: 8, k: 41 }),
         });
 
         if (!response.ok) {
