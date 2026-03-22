@@ -29,7 +29,7 @@ function CardRecommendation() {
           body: JSON.stringify({
             // Ne pas envoyer de favoris codés en dur ici :
             // le serveur Express doit récupérer les favoris de l'utilisateur connecté
-            top_n: 20,
+            top_n: 8,
           }),
         });
 
