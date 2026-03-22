@@ -1,33 +1,29 @@
 const express = require("express");
 const fetch = require("node-fetch"); // ✅ fonctionne avec node-fetch@2
-const fs = require("fs");
-const path = require("path");
 const router = express.Router();
 
+const Movie = require("../models/Movie"); // ⚡️ on utilise MongoDB
 const TMDB_KEY = process.env.TMDB_KEY;
 
-// ✅ Recherche de films avec filtrage CSV
+// ✅ Recherche de films avec filtrage MongoDB
 router.get("/search", async (req, res) => {
   const query = req.query.q;
   if (!query) return res.status(400).json({ error: "Query manquante" });
 
   try {
-    const filePath = path.join(__dirname, "../movies_enriched.csv");
-    let existingTitles = new Set();
+    // 1️⃣ Récupérer tous les titres existants dans MongoDB
+    const existingMovies = await Movie.find({}, { title: 1 }).lean();
+    const existingTitles = new Set(
+      existingMovies.map((m) =>
+        m.title
+          ?.trim()
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+      )
+    );
 
-    if (fs.existsSync(filePath)) {
-      const csvData = fs.readFileSync(filePath, "utf8").split("\n");
-      csvData.forEach((line) => {
-        const cols = line.split(",");
-        const title = cols[1]?.trim().toLowerCase();
-        if (title) {
-          const normalized = title.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-          existingTitles.add(normalized);
-        }
-      });
-    }
-
-    // ✅ Appel à TMDB en anglais
+    // 2️⃣ Appel à TMDB en anglais
     const url = `https://api.themoviedb.org/3/search/movie?api_key=${TMDB_KEY}&query=${encodeURIComponent(query)}&language=en-US`;
     const response = await fetch(url);
     const data = await response.json();
@@ -36,6 +32,7 @@ router.get("/search", async (req, res) => {
       return res.status(500).json({ error: "Réponse invalide de TMDB" });
     }
 
+    // 3️⃣ Filtrer les résultats pour éviter les doublons avec MongoDB
     const filteredResults = data.results.filter((movie) => {
       const normalizedTitle = movie.title
         ?.trim()
