@@ -75,6 +75,17 @@ async def refresh_movies_cache_if_needed():
         print(f"✅ Cache films à jour ({_movies_count_cache} films)")
 
 # =========================
+# Route Keep-Alive (Anti-sommeil Render)
+# =========================
+@app.get("/keep-alive")
+async def keep_alive():
+    """
+    Cette route sert uniquement à empêcher Render de mettre le serveur en veille.
+    Elle renvoie un message simple et un code 200 OK.
+    """
+    print("🛰️ Ping reçu : Instance maintenue en éveil.")
+    return {"status": "alive", "message": "RecommendIT backend is running"}
+# =========================
 # Startup: initialisation du cache et du CB recommender
 # =========================
 @app.on_event("startup")
