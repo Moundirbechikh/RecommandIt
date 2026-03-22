@@ -6,4 +6,6 @@ scikit-learn
 pydantic
 spacy
 fr-core-news-sm
+motor
+python-dotenv
 
