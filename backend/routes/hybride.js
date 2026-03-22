@@ -3,70 +3,50 @@ const fetch = require("node-fetch");
 const authMiddleware = require("../middlewares/auth");
 const Favorite = require("../models/Favorite");
 const Rate = require("../models/Rate");
-const fs = require("fs");
-const path = require("path");
-const csv = require("csv-parser");
+const Movie = require("../models/Movie");
 
 const router = express.Router();
 router.use(authMiddleware);
 
-// Charger le CSV en mémoire pour convertir movieId → infos
-let moviesMap = new Map();
-function loadMovies() {
-  return new Promise((resolve, reject) => {
-    const filePath = path.join(__dirname, "../movies_enriched.csv");
-    fs.createReadStream(filePath)
-      .pipe(csv())
-      .on("data", (row) => {
-        const movieData = {
-          movieId: row.movieId,
-          title: row.title,
-          year: row.year,
-          genres: row.genres ? row.genres.split("|") : [],
-          description: row.description,
-          backdrop: row.backdrop,
-        };
-        // Stocker par id et par titre
-        moviesMap.set(String(row.movieId), movieData);
-        moviesMap.set(row.title, movieData);
-      })
-      .on("end", () => resolve())
-      .on("error", reject);
-  });
-}
-loadMovies().catch(console.error);
+// =============================
+// Fonction d’enrichissement robuste (MongoDB)
+// =============================
+async function enrichRecommendations(recommendations) {
+  const enriched = [];
+  for (const rec of recommendations) {
+    let movieInfo = null;
 
-// Fonction d’enrichissement robuste
-function enrichRecommendations(recommendations) {
-  return recommendations
-    .map((rec) => {
-      let movieInfo = null;
+    // Cas 1 : FastAPI renvoie déjà un objet complet
+    if (rec.movieId && rec.title) {
+      enriched.push(rec);
+      continue;
+    }
 
-      // Cas 1 : FastAPI renvoie déjà un objet complet
-      if (rec.movieId && rec.title) {
-        return rec;
+    // Cas 2 : FastAPI renvoie {title, score}
+    if (rec.title) {
+      movieInfo = await Movie.findOne({ title: rec.title }).lean();
+    }
+
+    // Cas 3 : FastAPI renvoie {movieId, score}
+    if (!movieInfo && rec.movieId) {
+      movieInfo = await Movie.findOne({ movieId: rec.movieId }).lean();
+    }
+
+    // Cas 4 : FastAPI renvoie un tuple [id, score]
+    if (!movieInfo && Array.isArray(rec) && rec.length === 2) {
+      const [film, score] = rec;
+      movieInfo = await Movie.findOne({ movieId: film }).lean() || await Movie.findOne({ title: film }).lean();
+      if (movieInfo) {
+        enriched.push({ ...movieInfo, score });
+        continue;
       }
+    }
 
-      // Cas 2 : FastAPI renvoie {title, score}
-      if (rec.title) {
-        movieInfo = moviesMap.get(rec.title);
-      }
-
-      // Cas 3 : FastAPI renvoie {movieId, score}
-      if (!movieInfo && rec.movieId) {
-        movieInfo = moviesMap.get(String(rec.movieId));
-      }
-
-      // Cas 4 : FastAPI renvoie un tuple [id, score]
-      if (!movieInfo && Array.isArray(rec) && rec.length === 2) {
-        const [film, score] = rec;
-        movieInfo = moviesMap.get(String(film)) || moviesMap.get(film);
-        return movieInfo ? { ...movieInfo, score } : null;
-      }
-
-      return movieInfo ? { ...movieInfo, score: rec.score } : null;
-    })
-    .filter(Boolean);
+    if (movieInfo) {
+      enriched.push({ ...movieInfo, score: rec.score });
+    }
+  }
+  return enriched.filter(Boolean);
 }
 
 // =============================
@@ -84,23 +64,21 @@ router.post("/", async (req, res) => {
 
     // 1️⃣ Récupérer les favoris depuis MongoDB et convertir en titres
     const favoritesDocs = await Favorite.find({ userId: userObjectId }).lean();
-    const favoriteTitles = favoritesDocs
-      .map((f) => {
-        const movie = moviesMap.get(String(f.movieId));
-        return movie ? movie.title : null;
-      })
-      .filter(Boolean);
+    const favoriteTitles = [];
+    for (const f of favoritesDocs) {
+      const movie = await Movie.findOne({ movieId: f.movieId }).lean();
+      if (movie) favoriteTitles.push(movie.title);
+    }
 
     // 2️⃣ Récupérer les notes depuis MongoDB et convertir en titres
     const rateDoc = await Rate.findOne({ userId: userObjectId }).lean();
-    const userRatings = (rateDoc?.ratings || [])
-      .map((r) => {
-        const movie = moviesMap.get(String(r.filmId));
-        return movie
-          ? { title: movie.title, rating: r.note || r.rating }
-          : null;
-      })
-      .filter(Boolean);
+    const userRatings = [];
+    for (const r of (rateDoc?.ratings || [])) {
+      const movie = await Movie.findOne({ movieId: r.filmId }).lean();
+      if (movie) {
+        userRatings.push({ title: movie.title, rating: r.note || r.rating });
+      }
+    }
 
     // 3️⃣ Construire le payload pour FastAPI
     const params = {
@@ -112,7 +90,7 @@ router.post("/", async (req, res) => {
     };
     console.log("📡 Appel FastAPI /hybrid avec paramètres:", params);
 
-    // 4️⃣ Appeler FastAPI /hybrid via Render
+    // 4️⃣ Appeler FastAPI /hybrid
     const response = await fetch("https://recommandit-1.onrender.com/hybrid", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -131,15 +109,13 @@ router.post("/", async (req, res) => {
     console.log("📌 Premières recommandations:", recs.slice(0, 3));
 
     // 5️⃣ Enrichir les résultats si besoin
-    const enriched = enrichRecommendations(recs);
+    const enriched = await enrichRecommendations(recs);
 
     res.json({ success: true, recommendations: enriched });
     console.log("====================== HYBRIDE END ======================\n");
   } catch (err) {
     console.error("❌ Erreur route hybride:", err);
-    res
-      .status(500)
-      .json({ error: "Erreur serveur Hybride", details: err.message });
+    res.status(500).json({ error: "Erreur serveur Hybride", details: err.message });
   }
 });
 
