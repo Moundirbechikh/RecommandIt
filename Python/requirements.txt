@@ -8,4 +8,4 @@ spacy
 fr-core-news-sm
 motor
 python-dotenv
-
+nltk
