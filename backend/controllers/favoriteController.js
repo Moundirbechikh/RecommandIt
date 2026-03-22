@@ -1,8 +1,5 @@
-// controllers/favoriteController.js
 const Favorite = require("../models/Favorite");
-const fs = require("fs");
-const path = require("path");
-const csv = require("csv-parser");
+const Movie = require("../models/Movie");
 
 /**
  * Ajouter un favori
@@ -33,7 +30,7 @@ exports.addFavorite = async (req, res) => {
 };
 
 /**
- * Récupérer les favoris de l’utilisateur connecté (films enrichis)
+ * Récupérer les favoris de l’utilisateur connecté (films enrichis depuis MongoDB)
  */
 exports.getFavorites = async (req, res) => {
   try {
@@ -43,35 +40,17 @@ exports.getFavorites = async (req, res) => {
       return res.status(400).json({ message: "userId manquant" });
     }
 
-    const favorites = await Favorite.find({ userId });
+    const favorites = await Favorite.find({ userId }).lean();
 
-    // Charger les films depuis CSV
-    const filePath = path.join(__dirname, "../movies_enriched.csv");
-    const moviesMap = new Map();
+    // Charger les films depuis MongoDB
+    const favoriteMovies = await Promise.all(
+      favorites.map(async (fav) => {
+        const movie = await Movie.findOne({ movieId: fav.movieId }).lean();
+        return movie || null;
+      })
+    );
 
-    await new Promise((resolve, reject) => {
-      fs.createReadStream(filePath)
-        .pipe(csv())
-        .on("data", (data) => {
-          moviesMap.set(data.movieId, {
-            movieId: data.movieId,
-            title: data.title,
-            year: data.year,
-            genres: data.genres ? data.genres.split("|") : [],
-            description: data.description,
-            backdrop: data.backdrop,
-            release_date: data.release_date,
-          });
-        })
-        .on("end", resolve)
-        .on("error", reject);
-    });
-
-    const favoriteMovies = favorites
-      .map((fav) => moviesMap.get(fav.movieId))
-      .filter(Boolean);
-
-    res.json(favoriteMovies);
+    res.json(favoriteMovies.filter(Boolean));
   } catch (err) {
     console.error("❌ Erreur récupération favoris:", err.message);
     res.status(500).json({ message: "Erreur serveur", error: err.message });
