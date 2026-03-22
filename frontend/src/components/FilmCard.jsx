@@ -23,7 +23,7 @@ function FilmCard({ movie, showActions = true, isFavorite = false, hideRating = 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetch("http://localhost:5000/api/rates", {
+    fetch("https://recommandit.onrender.com/api/rates", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : []))
