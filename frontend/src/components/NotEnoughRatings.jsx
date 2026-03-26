@@ -15,7 +15,7 @@ const NotEnoughRatings = () => {
 
   <p className="text-base sm:text-lg md:text-2xl leading-relaxed mb-8 font-cursive text-black px-4 sm:px-10 md:px-20">
     Pour débloquer les recommandations avancées basées sur vos goûts,
-    vous devez noter au moins <span className="font-bold">11 films</span>.
+    vous devez noter au moins <span className="font-bold">5 films</span>.
     <br /><br />
     Pour le moment, nous vous proposons des suggestions basées sur 
     <span className="font-bold"> vos favoris</span> et vos interactions.
