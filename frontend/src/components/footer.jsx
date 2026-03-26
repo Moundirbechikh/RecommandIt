@@ -100,21 +100,30 @@ function Footer({ type = "public", onLogout, user }) {
         </div>
       </div>
 
-      {/* Contact Us + Réseaux sociaux */}
-      <div className="mt-8 text-center">
-        <h3 className="text-lg font-semibold mb-4 font-parisienne">Contact Us</h3>
-        <div className="flex justify-center gap-6">
-          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-pink-500 hover:scale-110 transition-transform">
-            <FaInstagram size={24} />
-          </a>
-          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:scale-110 transition-transform">
-            <FaFacebookF size={24} />
-          </a>
-          <a href="https://t.me" target="_blank" rel="noopener noreferrer" className="text-sky-500 hover:scale-110 transition-transform">
-            <FaTelegramPlane size={24} />
-          </a>
-        </div>
-      </div>
+{/* Contact Us + Réseaux sociaux */}
+<div className="mt-8 text-center">
+  <h3 className="text-lg font-semibold mb-4 font-parisienne">Contact Us</h3>
+  <div className="flex justify-center gap-6">
+    <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-pink-500 hover:scale-110 transition-transform">
+      <FaInstagram size={24} />
+    </a>
+    <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:scale-110 transition-transform">
+      <FaFacebookF size={24} />
+    </a>
+    <a href="https://t.me" target="_blank" rel="noopener noreferrer" className="text-sky-500 hover:scale-110 transition-transform">
+      <FaTelegramPlane size={24} />
+    </a>
+  </div>
+
+  {/* Logos supplémentaires */}
+  <div className="flex justify-center gap-6 mt-6">
+    <img src="/logoTmdp.svg" alt="TMDb Logo" className="h-10" />
+    <a href="https://iam-moundir.vercel.app" target="_blank" rel="noopener noreferrer">
+      <img src="/logo.png" alt="Mon Logo" className="h-10 rounded-md hover:scale-110 transition-transform" />
+    </a>
+  </div>
+</div>
+
 
       {/* Citation + Mention légale */}
       <div className="mt-6 text-center text-base text-black font-cursive">
