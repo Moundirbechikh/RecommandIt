@@ -13,19 +13,19 @@ function Apropos() {
         tout en profitant d’un catalogue qui s’enrichit régulièrement.
       </p>
 
-      {/* Mention TMDb */}
-      <div className="flex flex-col items-center mb-8">
-        <p className="text-md md:text-lg text-gray-600 leading-relaxed mb-3">
-          Toutes les informations affichées proviennent de 
-          <span className="font-bold"> TMDb </span>. Ce projet est réalisé uniquement 
-          à des fins personnelles et pédagogiques, sans objectif commercial.
-        </p>
-        <img 
-          src="https://www.themoviedb.org/assets/2/v4/logos/stacked-blue.svg" 
-          alt="TMDb Logo" 
-          className="h-12"
-        />
-      </div>
+<div className="flex flex-col items-center mb-8">
+  <p className="text-md md:text-lg text-gray-600 leading-relaxed mb-3">
+    Toutes les informations affichées proviennent de 
+    <span className="font-bold"> TMDb </span>. Ce projet est réalisé uniquement 
+    à des fins personnelles et pédagogiques, sans objectif commercial.
+  </p>
+  <img 
+    src="/logoTmdp.svg" 
+    alt="TMDb Logo" 
+    className="h-12"
+  />
+</div>
+
 
       {/* Section explicative */}
       <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
