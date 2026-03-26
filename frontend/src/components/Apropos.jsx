@@ -8,17 +8,16 @@ function Apropos() {
       {/* Intro */}
       <p className="text-lg md:text-xl text-gray-700 leading-relaxed mb-6">
         Bienvenue sur <span className="font-bold">Recommend It</span>, 
-        un site pensé pour tous ceux qui aiment découvrir de nouveaux films 
-        sans contraintes et sans inscription. Ici, pas besoin de créer un compte 
-        ou de partager vos données personnelles : vous arrivez, vous explorez, 
-        et vous repartez avec des idées de films à regarder.
+        une plateforme gratuite et évolutive pensée pour tous ceux qui aiment découvrir de nouveaux films. 
+        Ici, vous pouvez explorer et obtenir des recommandations sans contraintes, 
+        tout en profitant d’un catalogue qui s’enrichit régulièrement.
       </p>
 
       {/* Mention TMDb */}
       <div className="flex flex-col items-center mb-8">
         <p className="text-md md:text-lg text-gray-600 leading-relaxed mb-3">
           Toutes les informations affichées proviennent de 
-          <span className="font-bold"> TMDb </span> et ce projet est réalisé uniquement 
+          <span className="font-bold"> TMDb </span>. Ce projet est réalisé uniquement 
           à des fins personnelles et pédagogiques, sans objectif commercial.
         </p>
         <img 
