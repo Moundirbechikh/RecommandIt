@@ -14,6 +14,20 @@ function Apropos() {
         et vous repartez avec des idées de films à regarder.
       </p>
 
+      {/* Mention TMDb */}
+      <div className="flex flex-col items-center mb-8">
+        <p className="text-md md:text-lg text-gray-600 leading-relaxed mb-3">
+          Toutes les informations affichées proviennent de 
+          <span className="font-bold"> TMDb </span> et ce projet est réalisé uniquement 
+          à des fins personnelles et pédagogiques, sans objectif commercial.
+        </p>
+        <img 
+          src="https://www.themoviedb.org/assets/2/v4/logos/stacked-blue-2x-2e3a3f3f3f3f3f3f3f3f3f3f3f3f.png" 
+          alt="TMDb Logo" 
+          className="h-12"
+        />
+      </div>
+
       {/* Section explicative */}
       <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Carte 1 */}
