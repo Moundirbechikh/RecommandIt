@@ -21,7 +21,7 @@ function Apropos() {
           à des fins personnelles et pédagogiques, sans objectif commercial.
         </p>
         <img 
-          src="https://www.themoviedb.org/assets/2/v4/logos/stacked-blue-2x-2e3a3f3f3f3f3f3f3f3f3f3f3f3f.png" 
+          src="https://www.themoviedb.org/assets/2/v4/logos/stacked-blue.svg" 
           alt="TMDb Logo" 
           className="h-12"
         />
