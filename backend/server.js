@@ -18,9 +18,36 @@ const customMovieRoutes = require("./routes/customMovieRoutes");
 const filtragecolobRoutes = require("./routes/filtragecolob");
 const hybrideRoutes = require("./routes/hybride");
 
-
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// =======================
+// Réveil du service Python (anti cold-start Render)
+// =======================
+const PYTHON_API_URL = process.env.PYTHON_API_URL; // ex: https://ton-service-python.onrender.com
+const PING_COOLDOWN_MS = 5 * 60 * 1000; // ne pas spammer : 1 ping max toutes les 5 min
+let lastPythonPing = 0;
+
+async function wakePythonService(reason = "startup") {
+  if (!PYTHON_API_URL) {
+    console.warn("⚠️ PYTHON_API_URL non défini, impossible de réveiller le service Python.");
+    return;
+  }
+
+  const now = Date.now();
+  if (now - lastPythonPing < PING_COOLDOWN_MS) {
+    return; // trop récent, on skip
+  }
+  lastPythonPing = now;
+
+  try {
+    // fetch natif dispo depuis Node 18+, sinon installe node-fetch
+    const res = await fetch(`${PYTHON_API_URL}/keep-alive`, { method: "GET" });
+    console.log(`🐍 Ping Python (${reason}) -> status ${res.status}`);
+  } catch (err) {
+    console.error(`❌ Échec du réveil du service Python (${reason}):`, err.message);
+  }
+}
 
 // =======================
 // Middlewares globaux
@@ -28,11 +55,18 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json()); // pour lire le JSON dans les requêtes
 
+// À chaque requête entrante sur le backend, on tente (silencieusement) de réveiller Python
+app.use((req, res, next) => {
+  wakePythonService("requête entrante");
+  next();
+});
 
 app.get('/keep-alive', (req, res) => {
   console.log("Ping reçu ! Le serveur reste éveillé.");
+  wakePythonService("keep-alive manuel");
   res.status(200).send('Instance active');
 });
+
 // =======================
 // Endpoint pour récupérer tous les films depuis MongoDB
 // =======================
@@ -117,6 +151,8 @@ mongoose
     console.log("✅ Connecté à MongoDB Atlas");
     app.listen(PORT, () => {
       console.log(`✅ Backend démarré sur http://localhost:${PORT}`);
+      // Réveil du service Python dès que le backend démarre
+      wakePythonService("démarrage backend");
     });
   })
   .catch((err) => {
