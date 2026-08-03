@@ -1,7 +1,11 @@
-from fastapi import FastAPI, Body
+from fastapi import FastAPI, Body, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import os
+import time
+import logging
+import traceback
 import pandas as pd
 from motor.motor_asyncio import AsyncIOMotorClient
 from dotenv import load_dotenv
@@ -12,16 +16,44 @@ from ibcf import recommender_ibcf_from_ratings
 from cb import ContentBasedRecommender  # ⚡️ version adaptée pour MongoDB
 
 # =========================
+# Logging
+# =========================
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger("recommendit-api")
+
+# =========================
 # Initialiser FastAPI
 # =========================
 app = FastAPI()
+
+# =========================
+# Middleware : log chaque requête + capture toute erreur non gérée
+# avec le traceback complet (pour voir la VRAIE faille dans les logs Render)
+# =========================
+@app.middleware("http")
+async def log_and_catch_errors(request: Request, call_next):
+    start = time.time()
+    logger.info(f"➡️  {request.method} {request.url.path}")
+    try:
+        response = await call_next(request)
+        duration = round((time.time() - start) * 1000)
+        logger.info(f"⬅️  {request.method} {request.url.path} -> {response.status_code} ({duration}ms)")
+        return response
+    except Exception as e:
+        duration = round((time.time() - start) * 1000)
+        logger.error(f"💥 {request.method} {request.url.path} a crashé après {duration}ms")
+        logger.error(traceback.format_exc())
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "error": str(e), "type": type(e).__name__},
+        )
 
 # =========================
 # Connexion MongoDB Atlas
 # =========================
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
-print("🔎 Valeur de MONGO_URI:", MONGO_URI)
+logger.info(f"🔎 MONGO_URI défini: {bool(MONGO_URI)}")
 
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["RecommendIT"]
@@ -50,11 +82,10 @@ async def load_movies_cache():
         try:
             mid = int(m.get("movieId"))
         except Exception:
-            # si movieId n'est pas convertible, on ignore l'entrée
             continue
         movies_map[mid] = m
     _movies_count_cache = len(movies_map)
-    print(f"📊 Cache films rechargé: {_movies_count_cache} films")
+    logger.info(f"📊 Cache films rechargé: {_movies_count_cache} films")
 
 async def refresh_movies_cache_if_needed():
     """
@@ -65,14 +96,13 @@ async def refresh_movies_cache_if_needed():
     try:
         count = await movies_collection.count_documents({})
     except Exception as e:
-        print("❌ Impossible de compter les films dans MongoDB:", e)
+        logger.error(f"❌ Impossible de compter les films dans MongoDB: {e}")
         return
     if count != _movies_count_cache:
-        print(f"🔁 Changement détecté dans la collection movies (db={count} vs cache={_movies_count_cache}), rechargement du cache...")
+        logger.info(f"🔁 Changement détecté dans movies (db={count} vs cache={_movies_count_cache}), rechargement...")
         await load_movies_cache()
     else:
-        # pour debug léger
-        print(f"✅ Cache films à jour ({_movies_count_cache} films)")
+        logger.info(f"✅ Cache films à jour ({_movies_count_cache} films)")
 
 # =========================
 # Route Keep-Alive (Anti-sommeil Render)
@@ -83,8 +113,9 @@ async def keep_alive():
     Cette route sert uniquement à empêcher Render de mettre le serveur en veille.
     Elle renvoie un message simple et un code 200 OK.
     """
-    print("🛰️ Ping reçu : Instance maintenue en éveil.")
+    logger.info("🛰️ Ping reçu : Instance maintenue en éveil.")
     return {"status": "alive", "message": "RecommendIT backend is running"}
+
 # =========================
 # Startup: initialisation du cache et du CB recommender
 # =========================
@@ -93,16 +124,15 @@ async def startup_event():
     global cb_reco
     try:
         await client.admin.command("ping")
-        print("✅ Connecté à MongoDB Atlas")
+        logger.info("✅ Connecté à MongoDB Atlas")
 
-        # Charger le cache initial des films
         await load_movies_cache()
 
-        # Initialiser le ContentBasedRecommender (il charge ses propres données depuis la collection)
         cb_reco = await ContentBasedRecommender.create(movies_collection)
-        print("✅ ContentBasedRecommender initialisé")
+        logger.info("✅ ContentBasedRecommender initialisé")
     except Exception as e:
-        print("❌ Erreur au démarrage:", str(e))
+        logger.error("❌ Erreur au démarrage:")
+        logger.error(traceback.format_exc())
         raise e
 
 # =========================
@@ -147,7 +177,6 @@ class HybridRequest(BaseModel):
 # =========================
 @app.post("/ubcf")
 async def ubcf_recommend(req: UserRequest):
-    # S'assurer que le cache films est à jour
     await refresh_movies_cache_if_needed()
 
     df_list = []
@@ -173,7 +202,6 @@ async def ubcf_recommend(req: UserRequest):
 # =========================
 @app.post("/ibcf")
 async def ibcf_recommend(req: UserRequest):
-    # S'assurer que le cache films est à jour
     await refresh_movies_cache_if_needed()
 
     df_list = []
@@ -201,11 +229,9 @@ async def ibcf_recommend(req: UserRequest):
 # =========================
 @app.post("/cb")
 async def cb_recommend(req: FavoritesRequest):
-    # Vérifier et recharger le cache films si nécessaire
     await refresh_movies_cache_if_needed()
 
     try:
-        # ⚡️ Recréer le ContentBasedRecommender à chaque requête
         cb_reco = await ContentBasedRecommender.create(movies_collection)
 
         movie_ids = cb_reco.recommend_from_titles(
@@ -213,11 +239,12 @@ async def cb_recommend(req: FavoritesRequest):
             top_n=req.top_n,
             exclude_seen=req.exclude_seen
         )
-        print(f"🔎 Content-Based recs ({len(movie_ids)}):", movie_ids[:5])
+        logger.info(f"🔎 Content-Based recs ({len(movie_ids)}): {movie_ids[:5]}")
         return {"success": True, "recommendations": movie_ids}
     except Exception as e:
+        logger.error("❌ Erreur /cb:")
+        logger.error(traceback.format_exc())
         return {"success": False, "error": str(e)}
-
 
 # =========================
 # DESCRIPTION CLEAN
@@ -234,17 +261,17 @@ async def description_clean(
         desc_clean = build_description_clean_one(title=title, genres=genres, year=year, actors=actors, description=description)
         return {"success": True, "description_clean": desc_clean}
     except Exception as e:
+        logger.error("❌ Erreur /description_clean:")
+        logger.error(traceback.format_exc())
         return {"success": False, "error": str(e)}
 
 @app.post("/hybrid")
 async def hybrid_recommend_api(req: HybridRequest):
-    print("\n====================== HYBRID DEBUG ======================")
-    print("📩 Payload reçu:", req.dict())
+    logger.info("====================== HYBRID DEBUG ======================")
+    logger.info(f"📩 Payload reçu: {req.dict()}")
 
-    # Vérifier et recharger le cache films si nécessaire
     await refresh_movies_cache_if_needed()
 
-    # Construire la liste de ratings
     df_list = []
     user_seen_titles_db = set()
     user_seen_ids_db = set()
@@ -266,7 +293,6 @@ async def hybrid_recommend_api(req: HybridRequest):
                     user_seen_titles_db.add(movie.get("title"))
                     user_seen_ids_db.add(int(film_id))
 
-    # Films déjà vus
     user_seen_titles_payload = {r.title for r in req.userRatings}
     seen_titles = user_seen_titles_db | user_seen_titles_payload
     title_to_id = {m["title"]: int(m["movieId"]) for m in movies_map.values() if "movieId" in m and "title" in m}
@@ -280,14 +306,11 @@ async def hybrid_recommend_api(req: HybridRequest):
 
     df = pd.DataFrame(df_list)
 
-    # UBCF
     ubcf_recs = recommender_ubcf_direct(df=df, user_object_id=req.userId, top_n=100, k=req.k)
 
-    # IBCF
     user_ratings_list = [{"title": r.title, "rating": r.rating} for r in req.userRatings]
     ibcf_recs = recommender_ibcf_from_ratings(df=df, user_ratings=user_ratings_list, top_n=100, k=req.k)
 
-    # ⚡️ Recréer Content-Based à chaque appel
     cb_reco = await ContentBasedRecommender.create(movies_collection)
     content_recs = cb_reco.recommend_with_details(
         favorites=req.favorites,
@@ -295,7 +318,6 @@ async def hybrid_recommend_api(req: HybridRequest):
         exclude_seen=list(seen_titles)
     )
 
-    # Normalisation et conversion en movieId
     ibcf_norm = {}
     for film, score in ibcf_recs:
         mid = title_to_id.get(film)
@@ -319,7 +341,6 @@ async def hybrid_recommend_api(req: HybridRequest):
 
     candidate_films = {mid for mid in candidate_films if not is_seen(mid)}
 
-    # Fusion des scores par movieId
     hybrid_scores = {}
     for mid in candidate_films:
         score_cb = content_norm.get(mid, 0.0)
@@ -329,7 +350,6 @@ async def hybrid_recommend_api(req: HybridRequest):
 
     recs = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)[:req.top_n]
 
-    # Enrichissement
     enriched = []
     for mid, score in recs:
         movie = movies_map.get(mid)
@@ -344,8 +364,8 @@ async def hybrid_recommend_api(req: HybridRequest):
                 "score": float(score)
             })
 
-    print(f"🎯 Nombre de recommandations enrichies: {len(enriched)}")
-    print("📌 Premières recommandations enrichies:", enriched[:3])
-    print("====================== HYBRID END ======================\n")
+    logger.info(f"🎯 Nombre de recommandations enrichies: {len(enriched)}")
+    logger.info(f"📌 Premières recommandations enrichies: {enriched[:3]}")
+    logger.info("====================== HYBRID END ======================")
 
     return {"success": True, "recommendations": enriched}
