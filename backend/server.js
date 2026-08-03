@@ -3,12 +3,14 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 
+const { ensurePythonAwake } = require("./utils/pythonWake");
+
 // Import des modèles
 const Movie = require("./models/Movie");
 const Rate = require("./models/Rate");
 
 // Import des routes
-const authRoutes = require("./routes/auth"); // routes d’authentification
+const authRoutes = require("./routes/auth"); // routes d'authentification
 const favoriteRoutes = require("./routes/favoriteRoutes"); // routes favoris
 const rateRoutes = require("./routes/rateRoutes");
 const contentBasedRoutes = require("./routes/contentBasedRoutes");
@@ -22,48 +24,13 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // =======================
-// Réveil du service Python (anti cold-start Render)
-// =======================
-const PYTHON_API_URL = process.env.PYTHON_API_URL; // ex: https://ton-service-python.onrender.com
-const PING_COOLDOWN_MS = 5 * 60 * 1000; // ne pas spammer : 1 ping max toutes les 5 min
-let lastPythonPing = 0;
-
-async function wakePythonService(reason = "startup") {
-  if (!PYTHON_API_URL) {
-    console.warn("⚠️ PYTHON_API_URL non défini, impossible de réveiller le service Python.");
-    return;
-  }
-
-  const now = Date.now();
-  if (now - lastPythonPing < PING_COOLDOWN_MS) {
-    return; // trop récent, on skip
-  }
-  lastPythonPing = now;
-
-  try {
-    // fetch natif dispo depuis Node 18+, sinon installe node-fetch
-    const res = await fetch(`${PYTHON_API_URL}/keep-alive`, { method: "GET" });
-    console.log(`🐍 Ping Python (${reason}) -> status ${res.status}`);
-  } catch (err) {
-    console.error(`❌ Échec du réveil du service Python (${reason}):`, err.message);
-  }
-}
-
-// =======================
 // Middlewares globaux
 // =======================
 app.use(cors());
 app.use(express.json()); // pour lire le JSON dans les requêtes
 
-// À chaque requête entrante sur le backend, on tente (silencieusement) de réveiller Python
-app.use((req, res, next) => {
-  wakePythonService("requête entrante");
-  next();
-});
-
 app.get('/keep-alive', (req, res) => {
-  console.log("Ping reçu ! Le serveur reste éveillé.");
-  wakePythonService("keep-alive manuel");
+  console.log("✅ Ping reçu ! Le serveur reste éveillé.");
   res.status(200).send('Instance active');
 });
 
@@ -143,7 +110,8 @@ app.use("/api/hybride", hybrideRoutes);
 // =======================
 // Connexion MongoDB Atlas + lancement serveur
 // =======================
-console.log("🔎 Valeur de process.env.MONGO_URI:", process.env.MONGO_URI);
+console.log("🔎 MONGO_URI défini:", !!process.env.MONGO_URI);
+console.log("🔎 PYTHON_API_URL défini:", !!process.env.PYTHON_API_URL);
 
 mongoose
   .connect(process.env.MONGO_URI, { dbName: "RecommendIT" })
@@ -151,8 +119,12 @@ mongoose
     console.log("✅ Connecté à MongoDB Atlas");
     app.listen(PORT, () => {
       console.log(`✅ Backend démarré sur http://localhost:${PORT}`);
-      // Réveil du service Python dès que le backend démarre
-      wakePythonService("démarrage backend");
+
+      // Un seul cycle de réveil déclenché au démarrage du backend.
+      // ensurePythonAwake() sérialise les appels : aucune requête
+      // concurrente n'est envoyée à Python pendant son cold start,
+      // ce qui évite le "Too Many Requests" côté Render.
+      ensurePythonAwake();
     });
   })
   .catch((err) => {
